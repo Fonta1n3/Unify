@@ -9,12 +9,10 @@ import SwiftUI
 
 
 struct ContentView: View {
-    private let names = ["Home", "Config"]
-    private let views:[any View] = [HomeView(), ConfigView()]
-    @State private var selection: String? = "Home"
+    private let names = ["Send", "Receive", "Config"]
+    private let views:[any View] = [SendView(), ReceiveView(), ConfigView()]
     
     private func createDefaultCreds() {
-        print("createDefaultCreds")
         DataManager.retrieve(entityName: "Credentials", completion: { credentials in
             guard let credentials = credentials else {
                 guard let rpcauthcreds = RPCAuth().generateCreds(username: "PayJoin", password: nil) else { return }
@@ -36,9 +34,14 @@ struct ContentView: View {
         NavigationView {
             List() {
                 NavigationLink {
-                    HomeView()
+                    SendView()
                 } label: {
-                    Text("Home")
+                    Text("Send")
+                }
+                NavigationLink {
+                    ReceiveView()
+                } label: {
+                    Text("Receive")
                 }
                 NavigationLink {
                     ConfigView()
@@ -46,7 +49,7 @@ struct ContentView: View {
                     Text("Config")
                 }
             }
-            Text("Select Home to start Pay Join or Config to export credentials.")
+            Text("Select Config to export authentication credentials for your bitcoin.conf.")
                 .onAppear {
                     createDefaultCreds()
                 }

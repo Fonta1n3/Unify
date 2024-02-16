@@ -21,7 +21,7 @@ class Crypto {
     static var randomKey: String {
         let privateKey = try! secp256k1.KeyAgreement.PrivateKey()
         let publicKey = privateKey.publicKey
-        return publicKey.dataRepresentation.hex
+        return publicKey.rawRepresentation.hex
     }
     
     static var privateKey: String {
@@ -29,8 +29,8 @@ class Crypto {
     }
     
     static func publicKey(privKey: String) -> String {
-        let privateKey = try! secp256k1.KeyAgreement.PrivateKey(dataRepresentation: hex_decode(privKey) ?? [])
-        return privateKey.publicKey.dataRepresentation.hex
+        let privateKey = try! secp256k1.KeyAgreement.PrivateKey(rawRepresentation: hex_decode(privKey) ?? [])
+        return privateKey.publicKey.rawRepresentation.hex
     }
     
     static func hex_decode(_ str: String) -> [UInt8]? {

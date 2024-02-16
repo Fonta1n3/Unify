@@ -13,15 +13,21 @@ struct ConfigView: View {
     @State private var rpcWallet = ""
     @State private var rpcWallets: [String] = []
     @State private var rpcPort = UserDefaults.standard.object(forKey: "rpcPort") as? String ?? "8332"
+    @State private var nostrEncryptionWords = ""
     
     
     func setValues() {
-        print("setValues")
         DataManager.retrieve(entityName: "Credentials", completion: { credentials in
             guard let credentials = credentials else {
                 guard let rpcauthcreds = RPCAuth().generateCreds(username: "PayJoin", password: nil) else { return }
                 let rpcpass = rpcauthcreds.password
-                let p: [String: Any] = ["rpcpass": rpcpass.data(using: .utf8)!]
+                let randomKey = Crypto.randomKey//save to keychain
+                guard KeyChain.set(randomKey.data(using: .utf8)!, forKey: "encKey") else { return }
+                let password = Crypto.randomKey
+                guard let encryptedKey = Crypto.encryptNostr(password.data(using: .utf8)!, randomKey) else { return }
+                // save encrypted key to core data and the random enc key to the keychain.
+                
+                let p: [String: Any] = ["rpcpass": rpcpass.data(using: .utf8)!, "nostrKey": encryptedKey]
                 DataManager.saveEntity(dict: p) { saved in
                     guard saved else {
                         print("not saved")
@@ -36,13 +42,21 @@ struct ConfigView: View {
                 return
             }
             
+            guard let nostrKey = credentials["nostrKey"] as? Data else { return }
+            guard let encKey = KeyChain.getData("encKey") else { return }
+            guard let decryptedNostrKey = Crypto.decryptNostr(nostrKey, String(data: encKey, encoding: .utf8)!) else {
+                return
+            }
+            
+            print("decryptedNostrKey: \(decryptedNostrKey)")
+            
             guard let rpcauthcreds = RPCAuth().generateCreds(username: "PayJoin", password: String(data: rpcpass, encoding: .utf8)) else { return }
             rpcAuth = rpcauthcreds.rpcAuth
             if let walletName = UserDefaults.standard.object(forKey: "walletName") as? String {
                 rpcWallet = walletName
             }
+            rpcPort = UserDefaults.standard.object(forKey: "rpcPort") as? String ?? "8332"
             
-            // need to fetch wallets
             BitcoinCoreRPC.shared.btcRPC(method: .listwallets) { (response, errorDesc) in
                 guard errorDesc == nil else {
                     print("errorDesc: \(errorDesc)")
@@ -62,10 +76,11 @@ struct ConfigView: View {
     var body: some View {
         Form() {
             Section("RPC Authentication") {
-                TextField("rpcauth=PayJoin:...", text: $rpcAuth)
+                TextField("", text: $rpcAuth)
+                    .truncationMode(.middle)
             }
             Section("RPC Port") {
-                TextField("8332", text: $rpcPort)
+                TextField("", text: $rpcPort)
                     .onSubmit {
                         UserDefaults.standard.setValue(rpcPort, forKey: "rpcPort")
                     }
@@ -86,16 +101,17 @@ struct ConfigView: View {
                                 rpcWallet = wallet
                             }
                     }
-                    
                 }
             }
-            
+            Section("Nostr Encryption") {
+                SecureField("", text: $nostrEncryptionWords)
+            }
         }
         .formStyle(.grouped)
         .multilineTextAlignment(.leading)
         .textFieldStyle(.roundedBorder)
-        .frame(width: 700, height: nil, alignment: .leading)
-        .padding()
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(EdgeInsets(top: 12, leading: 12, bottom: 12, trailing: 12))
         .onSubmit {
             setValues()
         }
