@@ -13,7 +13,7 @@ struct Pay_JoinApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            HomeView()
                 .environmentObject(manager)
                 .environment(\.managedObjectContext, manager.container.viewContext)
         }

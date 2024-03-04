@@ -12,9 +12,13 @@
 		0A0F18372B7D3DC100EE8168 /* NostrResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0F18362B7D3DC100EE8168 /* NostrResponse.swift */; };
 		0A0F18392B7D3DDC00EE8168 /* NostrEevent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0F18382B7D3DDC00EE8168 /* NostrEevent.swift */; };
 		0A0F183B2B7D417A00EE8168 /* KeyChain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0F183A2B7D417A00EE8168 /* KeyChain.swift */; };
+		0A0F18412B92BA7100EE8168 /* LibWally.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0A0F183F2B92BA3C00EE8168 /* LibWally.xcframework */; };
+		0A0F18422B92BA7100EE8168 /* LibWally.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 0A0F183F2B92BA3C00EE8168 /* LibWally.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		0A0F184B2B954B8000EE8168 /* Errors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0F184A2B954B8000EE8168 /* Errors.swift */; };
+		0A0F184D2B954CF500EE8168 /* Messages.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0F184C2B954CF500EE8168 /* Messages.swift */; };
 		0A206C532B7BE58000BDBFE1 /* Utxo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A206C522B7BE58000BDBFE1 /* Utxo.swift */; };
 		0A56E3382B792C6900CEC00A /* Pay_JoinApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A56E3372B792C6900CEC00A /* Pay_JoinApp.swift */; };
-		0A56E33A2B792C6900CEC00A /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A56E3392B792C6900CEC00A /* ContentView.swift */; };
+		0A56E33A2B792C6900CEC00A /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A56E3392B792C6900CEC00A /* HomeView.swift */; };
 		0A56E33C2B792C6C00CEC00A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0A56E33B2B792C6C00CEC00A /* Assets.xcassets */; };
 		0A56E33F2B792C6C00CEC00A /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0A56E33E2B792C6C00CEC00A /* Preview Assets.xcassets */; };
 		0A56E3442B792C6C00CEC00A /* Pay_Join.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 0A56E3422B792C6C00CEC00A /* Pay_Join.xcdatamodeld */; };
@@ -32,16 +36,34 @@
 		0A56E3702B7BC9E400CEC00A /* RPCPort.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A56E36F2B7BC9E400CEC00A /* RPCPort.swift */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		0A0F18432B92BA7100EE8168 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				0A0F18422B92BA7100EE8168 /* LibWally.xcframework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		0A0F18322B7D1B4C00EE8168 /* ReceiveView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReceiveView.swift; sourceTree = "<group>"; };
 		0A0F18342B7D204600EE8168 /* StreamManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreamManager.swift; sourceTree = "<group>"; };
 		0A0F18362B7D3DC100EE8168 /* NostrResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NostrResponse.swift; sourceTree = "<group>"; };
 		0A0F18382B7D3DDC00EE8168 /* NostrEevent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NostrEevent.swift; sourceTree = "<group>"; };
 		0A0F183A2B7D417A00EE8168 /* KeyChain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyChain.swift; sourceTree = "<group>"; };
+		0A0F183F2B92BA3C00EE8168 /* LibWally.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; path = LibWally.xcframework; sourceTree = SOURCE_ROOT; };
+		0A0F184A2B954B8000EE8168 /* Errors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Errors.swift; sourceTree = "<group>"; };
+		0A0F184C2B954CF500EE8168 /* Messages.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Messages.swift; sourceTree = "<group>"; };
+		0A0F184E2B9575E900EE8168 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		0A206C522B7BE58000BDBFE1 /* Utxo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utxo.swift; sourceTree = "<group>"; };
 		0A56E3342B792C6900CEC00A /* Pay Join.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Pay Join.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		0A56E3372B792C6900CEC00A /* Pay_JoinApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Pay_JoinApp.swift; sourceTree = "<group>"; };
-		0A56E3392B792C6900CEC00A /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		0A56E3392B792C6900CEC00A /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		0A56E33B2B792C6C00CEC00A /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		0A56E33E2B792C6C00CEC00A /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		0A56E3432B792C6C00CEC00A /* Pay_Join.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = Pay_Join.xcdatamodel; sourceTree = "<group>"; };
@@ -64,15 +86,68 @@
 			files = (
 				0A56E3662B7989EA00CEC00A /* RNCryptor in Frameworks */,
 				0A56E3632B79895E00CEC00A /* secp256k1 in Frameworks */,
+				0A0F18412B92BA7100EE8168 /* LibWally.xcframework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		0A0F183E2B92B46F00EE8168 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				0A56E3392B792C6900CEC00A /* HomeView.swift */,
+				0A56E36B2B7BC73F00CEC00A /* SendView.swift */,
+				0A56E36D2B7BC7AD00CEC00A /* ConfigView.swift */,
+				0A0F18322B7D1B4C00EE8168 /* ReceiveView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		0A0F18442B92BCB600EE8168 /* Nostr */ = {
+			isa = PBXGroup;
+			children = (
+				0A0F18342B7D204600EE8168 /* StreamManager.swift */,
+				0A0F18362B7D3DC100EE8168 /* NostrResponse.swift */,
+				0A0F18382B7D3DDC00EE8168 /* NostrEevent.swift */,
+			);
+			path = Nostr;
+			sourceTree = "<group>";
+		};
+		0A0F18452B92BCD700EE8168 /* Objects */ = {
+			isa = PBXGroup;
+			children = (
+				0A56E36F2B7BC9E400CEC00A /* RPCPort.swift */,
+				0A206C522B7BE58000BDBFE1 /* Utxo.swift */,
+				0A0F184A2B954B8000EE8168 /* Errors.swift */,
+				0A0F184C2B954CF500EE8168 /* Messages.swift */,
+			);
+			path = Objects;
+			sourceTree = "<group>";
+		};
+		0A0F18462B92BCF200EE8168 /* BitcoinCore */ = {
+			isa = PBXGroup;
+			children = (
+				0A56E3582B79760500CEC00A /* RPCAuth.swift */,
+				0A56E34C2B795B5700CEC00A /* BitcoinCoreRPC.swift */,
+				0A56E3672B7BACA200CEC00A /* Commands.swift */,
+				0A56E3692B7BAD5500CEC00A /* RPCParams.swift */,
+			);
+			path = BitcoinCore;
+			sourceTree = "<group>";
+		};
+		0A0F18472B92BD0800EE8168 /* CoreData */ = {
+			isa = PBXGroup;
+			children = (
+				0A56E34A2B794AC700CEC00A /* DataManager.swift */,
+			);
+			path = CoreData;
+			sourceTree = "<group>";
+		};
 		0A56E32B2B792C6900CEC00A = {
 			isa = PBXGroup;
 			children = (
+				0A0F184E2B9575E900EE8168 /* README.md */,
 				0A56E3362B792C6900CEC00A /* Pay Join */,
 				0A56E3352B792C6900CEC00A /* Products */,
 			);
@@ -89,26 +164,18 @@
 		0A56E3362B792C6900CEC00A /* Pay Join */ = {
 			isa = PBXGroup;
 			children = (
+				0A0F183F2B92BA3C00EE8168 /* LibWally.xcframework */,
 				0A56E3372B792C6900CEC00A /* Pay_JoinApp.swift */,
-				0A56E3392B792C6900CEC00A /* ContentView.swift */,
 				0A56E33B2B792C6C00CEC00A /* Assets.xcassets */,
 				0A56E3422B792C6C00CEC00A /* Pay_Join.xcdatamodeld */,
 				0A56E33D2B792C6C00CEC00A /* Preview Content */,
-				0A56E34A2B794AC700CEC00A /* DataManager.swift */,
-				0A56E34C2B795B5700CEC00A /* BitcoinCoreRPC.swift */,
+				0A0F18472B92BD0800EE8168 /* CoreData */,
+				0A0F18462B92BCF200EE8168 /* BitcoinCore */,
 				0A56E34E2B795BC600CEC00A /* Crypto.swift */,
-				0A56E3582B79760500CEC00A /* RPCAuth.swift */,
 				0A56E35A2B79769B00CEC00A /* Extensions.swift */,
-				0A56E3672B7BACA200CEC00A /* Commands.swift */,
-				0A56E3692B7BAD5500CEC00A /* RPCParams.swift */,
-				0A56E36B2B7BC73F00CEC00A /* SendView.swift */,
-				0A56E36D2B7BC7AD00CEC00A /* ConfigView.swift */,
-				0A56E36F2B7BC9E400CEC00A /* RPCPort.swift */,
-				0A206C522B7BE58000BDBFE1 /* Utxo.swift */,
-				0A0F18322B7D1B4C00EE8168 /* ReceiveView.swift */,
-				0A0F18342B7D204600EE8168 /* StreamManager.swift */,
-				0A0F18362B7D3DC100EE8168 /* NostrResponse.swift */,
-				0A0F18382B7D3DDC00EE8168 /* NostrEevent.swift */,
+				0A0F183E2B92B46F00EE8168 /* Views */,
+				0A0F18452B92BCD700EE8168 /* Objects */,
+				0A0F18442B92BCB600EE8168 /* Nostr */,
 				0A0F183A2B7D417A00EE8168 /* KeyChain.swift */,
 			);
 			path = "Pay Join";
@@ -132,6 +199,7 @@
 				0A56E3302B792C6900CEC00A /* Sources */,
 				0A56E3312B792C6900CEC00A /* Frameworks */,
 				0A56E3322B792C6900CEC00A /* Resources */,
+				0A0F18432B92BA7100EE8168 /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
@@ -209,13 +277,15 @@
 				0A0F18352B7D204600EE8168 /* StreamManager.swift in Sources */,
 				0A56E34B2B794AC700CEC00A /* DataManager.swift in Sources */,
 				0A56E36C2B7BC74000CEC00A /* SendView.swift in Sources */,
-				0A56E33A2B792C6900CEC00A /* ContentView.swift in Sources */,
+				0A56E33A2B792C6900CEC00A /* HomeView.swift in Sources */,
+				0A0F184D2B954CF500EE8168 /* Messages.swift in Sources */,
 				0A0F183B2B7D417A00EE8168 /* KeyChain.swift in Sources */,
 				0A56E3702B7BC9E400CEC00A /* RPCPort.swift in Sources */,
 				0A56E3442B792C6C00CEC00A /* Pay_Join.xcdatamodeld in Sources */,
 				0A56E34F2B795BC600CEC00A /* Crypto.swift in Sources */,
 				0A56E3382B792C6900CEC00A /* Pay_JoinApp.swift in Sources */,
 				0A0F18332B7D1B4C00EE8168 /* ReceiveView.swift in Sources */,
+				0A0F184B2B954B8000EE8168 /* Errors.swift in Sources */,
 				0A0F18392B7D3DDC00EE8168 /* NostrEevent.swift in Sources */,
 				0A56E3592B79760500CEC00A /* RPCAuth.swift in Sources */,
 				0A206C532B7BE58000BDBFE1 /* Utxo.swift in Sources */,
