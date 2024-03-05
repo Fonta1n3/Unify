@@ -4,5 +4,6 @@
         <attribute name="nostrEncWords" optional="YES" attributeType="Binary"/>
         <attribute name="nostrKey" optional="YES" attributeType="Binary"/>
         <attribute name="rpcPass" optional="YES" attributeType="Binary"/>
+        <attribute name="rpcUser" optional="YES" attributeType="String"/>
     </entity>
 </model>

@@ -9,6 +9,8 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 struct ConfigView: View {
+    @State private var rpcUser = "PayJoin"
+    @State private var rpcPassword = ""
     @State private var rpcAuth = ""
     @State private var rpcWallet = ""
     @State private var rpcWallets: [String] = []
@@ -18,9 +20,11 @@ struct ConfigView: View {
     @State private var bitcoinCoreError = ""
     @State private var showNoCredsError = false
     @State private var showCopiedAlert = false
+    @State private var showEncWords = false
     
-    
-    func setValues() {
+    private func setValues() {
+        rpcWallets.removeAll()
+        
         DataManager.retrieve(entityName: "Credentials", completion: { credentials in
             guard let credentials = credentials else {
                 showNoCredsError = true
@@ -36,6 +40,14 @@ struct ConfigView: View {
             
             guard let rpcPass = String(data: rpcPassData, encoding: .utf8) else { return }
             
+            rpcPassword = rpcPass
+            
+            guard let rpcUser = credentials["rpcUser"] as? String else {
+                return
+            }
+            
+            self.rpcUser = rpcUser
+            
             guard let encNostrWords = credentials["nostrEncWords"] as? Data else {
                 print("no encNostrWords")
                 return
@@ -48,7 +60,7 @@ struct ConfigView: View {
             
             nostrEncryptionWords = String(data: decryptedNostrWords, encoding: .utf8)!
             
-            guard let rpcauthcreds = RPCAuth().generateCreds(username: "PayJoin", password: rpcPass) else { return }
+            guard let rpcauthcreds = RPCAuth().generateCreds(username: rpcUser, password: rpcPass) else { return }
             
             rpcAuth = rpcauthcreds.rpcAuth
             
@@ -66,9 +78,15 @@ struct ConfigView: View {
                     return
                 }
                 
-                guard let wallets = response as? [String], wallets.count > 0 else {
+                guard let wallets = response as? [String] else {
                     showBitcoinCoreError = true
                     bitcoinCoreError = BitcoinCoreError.noWallets.localizedDescription
+                    return
+                }
+                
+                guard wallets.count > 0 else {
+                    showBitcoinCoreError = true
+                    bitcoinCoreError = "No wallets exist yet..."
                     return
                 }
                 
@@ -79,11 +97,75 @@ struct ConfigView: View {
         })
     }
     
+    private func saveNewNostrEncWords(words: String) {
+        guard let encWordsData = words.data(using: .utf8) else { return }
+        
+        guard let encryptedWords = Crypto.encrypt(encWordsData) else { return }
+        
+        DataManager.update(keyToUpdate: "nostrEncWords", newValue: encryptedWords) { updated in
+            if updated {
+                nostrEncryptionWords = words
+            } else {
+                //show error
+            }
+        }
+    }
+    
+    private func updateRpcUser(rpcUser: String) {
+        DataManager.update(keyToUpdate: "rpcUser", newValue: rpcUser) { updated in
+            if updated {
+                self.rpcUser = rpcUser
+            } else {
+                //show error
+            }
+        }
+    }
+    
+    private func updateRpcPass(rpcPass: String) {
+        guard let rpcPassData = rpcPass.data(using: .utf8) else { return }
+        
+        guard let encryptedRpcPass = Crypto.encrypt(rpcPassData) else { return }
+        
+        DataManager.update(keyToUpdate: "rpcPass", newValue: encryptedRpcPass) { updated in
+            if updated {
+                rpcPassword = rpcPass
+            } else {
+                //show error
+            }
+        }
+    }
+    
     var body: some View {
         Form() {
+            Section("RPC User") {
+                TextField("", text: $rpcUser)
+                    .onSubmit {
+                        // update rpcUser
+                        updateRpcUser(rpcUser: rpcUser)
+                        setValues()
+                    }
+            }
+            
+            Section("RPC Password") {
+                HStack {
+                    SecureField("", text: $rpcPassword)
+                        .onSubmit {
+                            // update rpcPass
+                            updateRpcPass(rpcPass: rpcPassword)
+                            setValues()
+                        }
+                    Button("Refresh", systemImage: "arrow.clockwise") {
+                        rpcPassword = Crypto.privateKey
+                        updateRpcPass(rpcPass: rpcPassword)
+                        setValues()
+                    }
+                }
+               
+            }
+            
             Section("RPC Authentication") {
                 HStack {
-                    TextField("", text: $rpcAuth)
+                    Text(rpcAuth)
                         .truncationMode(.middle)
                     
                     ShareLink("Export", item: rpcAuth)
@@ -110,12 +192,16 @@ struct ConfigView: View {
             
             Section("RPC Wallet") {
                 if rpcWallets.count == 0 {
-                    Text("No response from bitcoin-cli listwallets...")
+                    Text("No wallets...")
                 }
                 ForEach(rpcWallets, id: \.self) { wallet in
                     if rpcWallet == wallet {
-                        Text(wallet)
-                            .bold()
+                        HStack {
+                            Image(systemName: "checkmark")
+                            Text(wallet)
+                                .bold()
+                        }
+                        
                     } else {
                         Text(wallet)
                             .onTapGesture {
@@ -128,7 +214,29 @@ struct ConfigView: View {
             }
             
             Section("Nostr Encryption") {
-                SecureField("", text: $nostrEncryptionWords)
+                HStack {
+                    if showEncWords {
+                        TextField("", text: $nostrEncryptionWords)
+                            .onSubmit {
+                                //save new words
+                                saveNewNostrEncWords(words: nostrEncryptionWords)
+                            }
+                        Button("Hide", systemImage: "eye.slash") {
+                            showEncWords = false
+                        }
+                    } else {
+                        SecureField("", text: $nostrEncryptionWords)
+                            .onSubmit {
+                                //save new words
+                                saveNewNostrEncWords(words: nostrEncryptionWords)
+                            }
+                        Button("Show", systemImage: "eye") {
+                            showEncWords = true
+                        }
+                    }
+                    
+                }
+               
             }
         }
         .formStyle(.grouped)

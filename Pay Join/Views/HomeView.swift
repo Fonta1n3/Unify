@@ -80,7 +80,8 @@ struct HomeView: View {
                     let dict: [String:Any] = [
                         "nostrKey": encryptedNostrPrivateKey,
                         "rpcPass": encRpcPass,
-                        "nostrEncWords": encryptedNostrWords
+                        "nostrEncWords": encryptedNostrWords,
+                        "rpcUser": "PayJoin"
                     ]
                                         
                     DataManager.saveEntity(dict: dict) { saved in
@@ -96,7 +97,7 @@ struct HomeView: View {
                     return
                 }
             })
-       // }
+       //}
     }
     
     

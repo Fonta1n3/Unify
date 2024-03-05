@@ -31,9 +31,14 @@ class BitcoinCoreRPC {
                 return
             }
             
+            guard let rpcUser = credentials["rpcUser"] as? String else {
+                completion((nil, "Unable to get rpc user."))
+                return
+            }
+            
             let rpcPort = UserDefaults.standard.object(forKey: "rpcPort") as? String ?? "8332"
             let walletName = UserDefaults.standard.object(forKey: "walletName") as? String
-            var walletUrl = "http://PayJoin:\(rpcPass)@localhost:\(rpcPort)"
+            var walletUrl = "http://\(rpcUser):\(rpcPass)@localhost:\(rpcPort)"
             
             if let walletName = walletName {
                 walletUrl += "/wallet/" + walletName
