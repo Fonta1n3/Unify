@@ -6,7 +6,7 @@
 //
 
 import Foundation
-//import CommonCrypto
+import CommonCrypto
 import secp256k1
 //import secp256k1_implementation
 import CryptoKit
@@ -329,23 +329,37 @@ class NostrEvent: Codable, Identifiable, CustomStringConvertible, Equatable {
         return self.tags.count - 1
     }
 
-    func sign(privkey: String) {
+    func sign(privkey: Data) {
         self.sig = sign_event(privkey: privkey, ev: self)
     }
 }
 
-func sign_event(privkey: String, ev: NostrEvent) -> String {
-    let priv_key_bytes = try! privkey.bytes
-    let key = try! secp256k1.Signing.PrivateKey(rawRepresentation: priv_key_bytes)
+func sign_event(privkey: Data, ev: NostrEvent) -> String {
+    //let priv_key_bytes = try! privkey.bytes
+    //let key = try! secp256k1.Signing.PrivateKey(dataRepresentation: privkey)
+    let signingKey = try! secp256k1.Schnorr.PrivateKey(dataRepresentation: privkey)
+    var contentBytes = try! ev.id.bytes
+    /*
+     func signatureForContent(_ content: String, privateKey: String) throws -> String {
+         let privateKeyBytes = try privateKey.bytes
+         let signingKey = try secp256k1.Schnorr.PrivateKey(dataRepresentation: privateKeyBytes)
+         var contentBytes = try content.bytes
+         var rand = Data.randomBytes(count: 64)
+         let signature = try signingKey.signature(message: &contentBytes, auxiliaryRand: &rand)
+         return signature.dataRepresentation.hexString
+     }
+     */
 
     // Extra params for custom signing
     var aux_rand = random_bytes(count: 64)
     var digest = try! ev.id.bytes
 
     // API allows for signing variable length messages
-    let signature = try! key.schnorr.signature(message: &digest, auxiliaryRand: &aux_rand)
+    //let sig = try! key.signature(for: digest)
+    let signature = try! signingKey.signature(message: &contentBytes, auxiliaryRand: &aux_rand)
+    
 
-    return hex_encode(signature.rawRepresentation)
+    return hex_encode(signature.dataRepresentation)
 }
 
 func decode_nostr_event(txt: String) -> NostrResponse? {
@@ -575,7 +589,7 @@ func validate_event(ev: NostrEvent) -> ValidationResult {
         return .bad_sig
     }
 
-    let ctx = secp256k1.Context.raw
+    let ctx = secp256k1.Context.rawRepresentation
     var xonly_pubkey = secp256k1_xonly_pubkey.init()
     var ok = secp256k1_xonly_pubkey_parse(ctx, &xonly_pubkey, &ev_pubkey) != 0
     if !ok {
@@ -641,4 +655,107 @@ func char_to_hex(_ c: UInt8) -> UInt8?
         return c - 65 + 10;
     }
     return nil;
+}
+
+enum EncEncoding {
+    case base64
+    case bech32
+}
+
+func decrypt_dm(_ privkey: String, pubkey: String, content: String) -> String? {
+//    guard let privkey = privkey else {
+//        return nil
+//    }
+    guard let shared_sec = get_shared_secret(privkey: privkey, pubkey: pubkey) else {
+        return nil
+    }
+    guard let dat = decode_dm_base64(content) else {
+        return nil
+    }
+    guard let dat = aes_decrypt(data: dat.content, iv: dat.iv, shared_sec: shared_sec) else {
+        return nil
+    }
+    return String(data: dat, encoding: .utf8)
+}
+
+func get_shared_secret(privkey: String, pubkey: String) -> [UInt8]? {
+    let privkey_bytes = try! privkey.bytes
+    var pk_bytes = try! pubkey.bytes
+
+    //pk_bytes.insert(2, at: 0)
+    
+    var publicKey = secp256k1_pubkey()
+    var shared_secret = [UInt8](repeating: 0, count: 32)
+
+    var ok =
+        secp256k1_ec_pubkey_parse(
+            secp256k1.Context.rawRepresentation,
+            &publicKey,
+            pk_bytes,
+            pk_bytes.count) != 0
+
+    if !ok {
+        return nil
+    }
+
+    ok = secp256k1_ecdh(
+        secp256k1.Context.rawRepresentation,
+        &shared_secret,
+        &publicKey,
+        privkey_bytes, {(output,x32,_,_) in
+            memcpy(output,x32,32)
+            return 1
+        }, nil) != 0
+
+    if !ok {
+        return nil
+    }
+
+    return shared_secret
+}
+
+func aes_decrypt(data: [UInt8], iv: [UInt8], shared_sec: [UInt8]) -> Data? {
+    return aes_operation(operation: CCOperation(kCCDecrypt), data: data, iv: iv, shared_sec: shared_sec)
+}
+
+func aes_encrypt(data: [UInt8], iv: [UInt8], shared_sec: [UInt8]) -> Data? {
+    return aes_operation(operation: CCOperation(kCCEncrypt), data: data, iv: iv, shared_sec: shared_sec)
+}
+
+func aes_operation(operation: CCOperation, data: [UInt8], iv: [UInt8], shared_sec: [UInt8]) -> Data? {
+    let data_len = data.count
+    let bsize = kCCBlockSizeAES128
+    let len = Int(data_len) + bsize
+    var decrypted_data = [UInt8](repeating: 0, count: len)
+
+    let key_length = size_t(kCCKeySizeAES256)
+    if shared_sec.count != key_length {
+        assert(false, "unexpected shared_sec len: \(shared_sec.count) != 32")
+        return nil
+    }
+
+    let algorithm: CCAlgorithm = UInt32(kCCAlgorithmAES128)
+    let options:   CCOptions   = UInt32(kCCOptionPKCS7Padding)
+
+    var num_bytes_decrypted :size_t = 0
+
+    let status = CCCrypt(operation,  /*op:*/
+                         algorithm,  /*alg:*/
+                         options,    /*options:*/
+                         shared_sec, /*key:*/
+                         key_length, /*keyLength:*/
+                         iv,         /*iv:*/
+                         data,       /*dataIn:*/
+                         data_len, /*dataInLength:*/
+                         &decrypted_data,/*dataOut:*/
+                         len,/*dataOutAvailable:*/
+                         &num_bytes_decrypted/*dataOutMoved:*/
+    )
+
+    if UInt32(status) != UInt32(kCCSuccess) {
+        return nil
+    }
+
+    return Data(bytes: decrypted_data, count: num_bytes_decrypted)
+
 }

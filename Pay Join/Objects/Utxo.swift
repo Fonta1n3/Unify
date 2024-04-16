@@ -11,7 +11,7 @@ public struct Utxo: CustomStringConvertible, Hashable {
     
     let amount: Double?
     let address: String?
-//    let desc: String?
+    let desc: String?
     let solvable: Bool?
     let txid: String
     let vout: Int64
@@ -38,7 +38,7 @@ public struct Utxo: CustomStringConvertible, Hashable {
         //label = dictionary["label"] as? String
         address = dictionary["address"] as? String
         amount = dictionary["amount"] as? Double
-        //desc = dictionary["desc"] as? String
+        desc = dictionary["desc"] as? String
         txid = dictionary["txid"] as? String ?? ""
         vout = dictionary["vout"] as? Int64 ?? 0
         //walletId = dictionary["walletId"] as? UUID

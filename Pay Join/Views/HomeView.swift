@@ -7,15 +7,15 @@
 
 import SwiftUI
 
-
 struct HomeView: View {
     @State private var showingNotSavedAlert = false
     @State private var showingSavedAlert = false
     
-    private let names = ["Send", "Receive", "Config"]
-    private let views:[any View] = [SendView(), ReceiveView(), ConfigView()]
+    private let names = ["Receive", "Send", "Config"]
+    private let views: [any View] = [ReceiveView(), SendView(), ConfigView()]
     
     private func createDefaultCreds() {
+        print("createDefaultCreds")
         //DataManager.deleteAllData { deleted in
             DataManager.retrieve(entityName: "Credentials", completion: { credentials in
                 guard let _ = credentials else {
@@ -43,30 +43,30 @@ struct HomeView: View {
                     let privkey = Crypto.nostrPrivateKey()
                     let pubkey = Crypto.publicKey(privKey: privkey.hex)
                     
-                    guard let seed = Crypto.seed() else {
-                        showingNotSavedAlert = true
-                        return
-                    }
+//                    guard let seed = Crypto.seed() else {
+//                        showingNotSavedAlert = true
+//                        return
+//                    }
+//                    
+//                    let arr = seed.split(separator: " ")
+//                    var encryptionWords = ""
+//                    for (i, word) in arr.enumerated() {
+//                        if i < 5 {
+//                            encryptionWords += word
+//                            if i < 4 {
+//                                encryptionWords += " "
+//                            }
+//                        }
+//                    }
+//                    print("nostr pubkey: \(pubkey)")
+//                    print("encryptionWords: \(encryptionWords)")
                     
-                    let arr = seed.split(separator: " ")
-                    var encryptionWords = ""
-                    for (i, word) in arr.enumerated() {
-                        if i < 5 {
-                            encryptionWords += word
-                            if i < 4 {
-                                encryptionWords += " "
-                            }
-                        }
-                    }
-                    print("nostr pubkey: \(pubkey)")
-                    print("encryptionWords: \(encryptionWords)")
                     
-                    
-                    guard let encryptedNostrWords = Crypto.encrypt(encryptionWords.data(using: .utf8)!) else {
-                        showingNotSavedAlert = true
-                        print("unable to encrypt nostr words")
-                        return
-                    }
+//                    guard let encryptedNostrWords = Crypto.encrypt(encryptionWords.data(using: .utf8)!) else {
+//                        showingNotSavedAlert = true
+//                        print("unable to encrypt nostr words")
+//                        return
+//                    }
                     
                     guard let encryptedNostrPrivateKey = Crypto.encrypt(privkey) else {
                         showingNotSavedAlert = true
@@ -74,13 +74,13 @@ struct HomeView: View {
                         return
                     }
                     
-                    print("encryptedNostrWords: \(encryptedNostrWords.hex)")
+                    //print("encryptedNostrWords: \(encryptedNostrWords.hex)")
                     print("encryptedNostrPrivateKey: \(encryptedNostrPrivateKey.hex)")
                     
                     let dict: [String:Any] = [
                         "nostrKey": encryptedNostrPrivateKey,
                         "rpcPass": encRpcPass,
-                        "nostrEncWords": encryptedNostrWords,
+                        //"nostrEncWords": encryptedNostrWords,
                         "rpcUser": "PayJoin"
                     ]
                                         
@@ -105,14 +105,14 @@ struct HomeView: View {
         NavigationView {
             List() {
                 NavigationLink {
-                    SendView()
-                } label: {
-                    Text("Send")
-                }
-                NavigationLink {
                     ReceiveView()
                 } label: {
                     Text("Receive")
+                }
+                NavigationLink {
+                    SendView()
+                } label: {
+                    Text("Send")
                 }
                 NavigationLink {
                     ConfigView()
@@ -121,16 +121,18 @@ struct HomeView: View {
                 }
             }
             Text(Messages.contentViewPrompt.description)
-                .onAppear {
-                    createDefaultCreds()
-                }
+                
         }
+        
         .alert(CoreDataError.notSaved.localizedDescription, isPresented: $showingNotSavedAlert) {
                     Button("OK", role: .cancel) { }
                 }
         .alert(Messages.savedCredentials.description, isPresented: $showingSavedAlert) {
                     Button("OK", role: .cancel) { }
                 }
+        .onAppear {
+            createDefaultCreds()
+        }
     }
 }
 

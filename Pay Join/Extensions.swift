@@ -16,3 +16,4 @@ public extension Data {
         return self.base64EncodedString().replacingOccurrences(of: "/", with: "_").replacingOccurrences(of: "=", with: "").replacingOccurrences(of: "+", with: "-")
     }
 }
+

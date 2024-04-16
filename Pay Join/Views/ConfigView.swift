@@ -15,6 +15,7 @@ struct ConfigView: View {
     @State private var rpcWallet = ""
     @State private var rpcWallets: [String] = []
     @State private var rpcPort = UserDefaults.standard.object(forKey: "rpcPort") as? String ?? "8332"
+    @State private var nostrRelay = UserDefaults.standard.object(forKey: "nostrRelay") as? String ?? "wss://nostr-relay.wlvs.space"
     @State private var nostrEncryptionWords = ""
     @State private var showBitcoinCoreError = false
     @State private var bitcoinCoreError = ""
@@ -23,93 +24,82 @@ struct ConfigView: View {
     @State private var showEncWords = false
     
     private func setValues() {
+        print("setValues")
         rpcWallets.removeAll()
+        rpcWallet = ""
         
-        DataManager.retrieve(entityName: "Credentials", completion: { credentials in
-            guard let credentials = credentials else {
-                showNoCredsError = true
-                return
-            }
+        //DataManager.deleteAllData { deleted in
+            //if deleted {
+                DataManager.retrieve(entityName: "Credentials", completion: { credentials in
+                    guard let credentials = credentials else {
+                        showNoCredsError = true
+                        return
+                    }
+                                
+                    guard let encRpcPass = credentials["rpcPass"] as? Data else {
+                        print("no rpc creds")
+                        return
+                    }
+                    
+                    guard let rpcPassData = Crypto.decrypt(encRpcPass) else { print("unable to decrypt rpcpass"); return }
+                    
+                    guard let rpcPass = String(data: rpcPassData, encoding: .utf8) else { return }
+                    
+                    rpcPassword = rpcPass
+                    
+                    guard let rpcUser = credentials["rpcUser"] as? String else {
+                        print("no rpcUser")
+                        return
+                    }
+                    
+                    self.rpcUser = rpcUser
+                    
+                    guard let rpcauthcreds = RPCAuth().generateCreds(username: rpcUser, password: rpcPass) else {
+                        print("rpcAuthCreds failing")
+                        return
+                    }
+                    
+                    rpcAuth = rpcauthcreds.rpcAuth
+                    print("rpcAuth: \(rpcAuth)")
+                    
+                    if let walletName = UserDefaults.standard.object(forKey: "walletName") as? String {
+                        rpcWallet = walletName
+                    }
+                    
+                    rpcPort = UserDefaults.standard.object(forKey: "rpcPort") as? String ?? "8332"
+                    
+                    nostrRelay = UserDefaults.standard.object(forKey: "nostrRelay") as? String ?? "wss://relay.damus.io"
+                    
+                    BitcoinCoreRPC.shared.btcRPC(method: .listwallets) { (response, errorDesc) in
+                        guard errorDesc == nil else {
+                            bitcoinCoreError = errorDesc!
+                            showBitcoinCoreError = true
+                            //rpcWallets.removeAll()
+                            return
+                        }
                         
-            guard let encRpcPass = credentials["rpcPass"] as? Data else {
-                print("no rpc creds")
-                return
-            }
-            
-            guard let rpcPassData = Crypto.decrypt(encRpcPass) else { print("unable to decrypt rpcpass"); return }
-            
-            guard let rpcPass = String(data: rpcPassData, encoding: .utf8) else { return }
-            
-            rpcPassword = rpcPass
-            
-            guard let rpcUser = credentials["rpcUser"] as? String else {
-                return
-            }
-            
-            self.rpcUser = rpcUser
-            
-            guard let encNostrWords = credentials["nostrEncWords"] as? Data else {
-                print("no encNostrWords")
-                return
-            }
-            
-            guard let decryptedNostrWords = Crypto.decrypt(encNostrWords) else {
-                print("no decrypted nostr words")
-                return
-            }
-            
-            nostrEncryptionWords = String(data: decryptedNostrWords, encoding: .utf8)!
-            
-            guard let rpcauthcreds = RPCAuth().generateCreds(username: rpcUser, password: rpcPass) else { return }
-            
-            rpcAuth = rpcauthcreds.rpcAuth
-            
-            if let walletName = UserDefaults.standard.object(forKey: "walletName") as? String {
-                rpcWallet = walletName
-            }
-            
-            rpcPort = UserDefaults.standard.object(forKey: "rpcPort") as? String ?? "8332"
-            
-            BitcoinCoreRPC.shared.btcRPC(method: .listwallets) { (response, errorDesc) in
-                guard errorDesc == nil else {
-                    bitcoinCoreError = errorDesc!
-                    showBitcoinCoreError = true
-                    rpcWallets.removeAll()
-                    return
-                }
-                
-                guard let wallets = response as? [String] else {
-                    showBitcoinCoreError = true
-                    bitcoinCoreError = BitcoinCoreError.noWallets.localizedDescription
-                    return
-                }
-                
-                guard wallets.count > 0 else {
-                    showBitcoinCoreError = true
-                    bitcoinCoreError = "No wallets exist yet..."
-                    return
-                }
-                
-                for wallet in wallets {
-                    rpcWallets.append(wallet)
-                }
-            }
-        })
+                        guard let wallets = response as? [String] else {
+                            showBitcoinCoreError = true
+                            bitcoinCoreError = BitcoinCoreError.noWallets.localizedDescription
+                            return
+                        }
+                        
+                        guard wallets.count > 0 else {
+                            showBitcoinCoreError = true
+                            bitcoinCoreError = "No wallets exist yet..."
+                            return
+                        }
+                        
+                        for wallet in wallets {
+                            rpcWallets.append(wallet)
+                        }
+                    }
+                })
+            //}
+        //}
+        
     }
     
-    private func saveNewNostrEncWords(words: String) {
-        guard let encWordsData = words.data(using: .utf8) else { return }
-        
-        guard let encryptedWords = Crypto.encrypt(encWordsData) else { return }
-        
-        DataManager.update(keyToUpdate: "nostrEncWords", newValue: encryptedWords) { updated in
-            if updated {
-                nostrEncryptionWords = words
-            } else {
-                //show error
-            }
-        }
-    }
     
     private func updateRpcUser(rpcUser: String) {
         DataManager.update(keyToUpdate: "rpcUser", newValue: rpcUser) { updated in
@@ -129,6 +119,7 @@ struct ConfigView: View {
         DataManager.update(keyToUpdate: "rpcPass", newValue: encryptedRpcPass) { updated in
             if updated {
                 rpcPassword = rpcPass
+                setValues()
             } else {
                 //show error
             }
@@ -136,6 +127,8 @@ struct ConfigView: View {
     }
     
     var body: some View {
+        Spacer()
+        Label("Configuration", systemImage: "gear")
         Form() {
             Section("RPC User") {
                 TextField("", text: $rpcUser)
@@ -154,10 +147,10 @@ struct ConfigView: View {
                             updateRpcPass(rpcPass: rpcPassword)
                             setValues()
                         }
-                    Button("Refresh", systemImage: "arrow.clockwise") {
+                    Button("", systemImage: "arrow.clockwise") {
                         rpcPassword = Crypto.privateKey
                         updateRpcPass(rpcPass: rpcPassword)
-                        setValues()
+                        //setValues()
                     }
                 }
                
@@ -167,10 +160,11 @@ struct ConfigView: View {
                 HStack {
                     Text(rpcAuth)
                         .truncationMode(.middle)
+                        .lineLimit(1)
                     
-                    ShareLink("Export", item: rpcAuth)
+                    ShareLink(" ", item: rpcAuth)
                     
-                    Button("Copy", systemImage: "doc.on.doc") {
+                    Button(" ", systemImage: "doc.on.doc") {
                         #if os(macOS)
                         NSPasteboard.general.clearContents()
                         NSPasteboard.general.setString(rpcAuth, forType: .string)
@@ -213,30 +207,19 @@ struct ConfigView: View {
                 }
             }
             
-            Section("Nostr Encryption") {
-                HStack {
-                    if showEncWords {
-                        TextField("", text: $nostrEncryptionWords)
-                            .onSubmit {
-                                //save new words
-                                saveNewNostrEncWords(words: nostrEncryptionWords)
-                            }
-                        Button("Hide", systemImage: "eye.slash") {
-                            showEncWords = false
-                        }
-                    } else {
-                        SecureField("", text: $nostrEncryptionWords)
-                            .onSubmit {
-                                //save new words
-                                saveNewNostrEncWords(words: nostrEncryptionWords)
-                            }
-                        Button("Show", systemImage: "eye") {
-                            showEncWords = true
-                        }
+            Section("Nostr Relay") {
+                TextField("", text: $nostrRelay)
+                    .onSubmit {
+                        print("on submit")
+                        //rpcWallets.removeAll()
+                        //rpcWallet = ""
+                        print("nostrRelay \(nostrRelay)")
+                        nostrRelay = nostrRelay
+                        UserDefaults.standard.setValue(nostrRelay, forKey: "nostrRelay")
+                        
+                        //setValues()
                     }
                     
-                }
-               
             }
         }
         .formStyle(.grouped)

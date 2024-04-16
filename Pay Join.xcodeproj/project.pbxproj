@@ -10,12 +10,18 @@
 		0A0F18332B7D1B4C00EE8168 /* ReceiveView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0F18322B7D1B4C00EE8168 /* ReceiveView.swift */; };
 		0A0F18352B7D204600EE8168 /* StreamManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0F18342B7D204600EE8168 /* StreamManager.swift */; };
 		0A0F18372B7D3DC100EE8168 /* NostrResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0F18362B7D3DC100EE8168 /* NostrResponse.swift */; };
-		0A0F18392B7D3DDC00EE8168 /* NostrEevent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0F18382B7D3DDC00EE8168 /* NostrEevent.swift */; };
+		0A0F18392B7D3DDC00EE8168 /* NostrEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0F18382B7D3DDC00EE8168 /* NostrEvent.swift */; };
 		0A0F183B2B7D417A00EE8168 /* KeyChain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0F183A2B7D417A00EE8168 /* KeyChain.swift */; };
 		0A0F18412B92BA7100EE8168 /* LibWally.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0A0F183F2B92BA3C00EE8168 /* LibWally.xcframework */; };
 		0A0F18422B92BA7100EE8168 /* LibWally.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 0A0F183F2B92BA3C00EE8168 /* LibWally.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		0A0F184B2B954B8000EE8168 /* Errors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0F184A2B954B8000EE8168 /* Errors.swift */; };
 		0A0F184D2B954CF500EE8168 /* Messages.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0F184C2B954CF500EE8168 /* Messages.swift */; };
+		0A0F18502BA002FB00EE8168 /* NostrFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0F184F2BA002FB00EE8168 /* NostrFilter.swift */; };
+		0A0F18642BA012BE00EE8168 /* Bech32.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0F18632BA012BE00EE8168 /* Bech32.swift */; };
+		0A0F18662BA125EA00EE8168 /* Nip4Encryption.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0F18652BA125EA00EE8168 /* Nip4Encryption.swift */; };
+		0A0F188C2BA3F68500EE8168 /* NostrSDK in Frameworks */ = {isa = PBXBuildFile; productRef = 0A0F188B2BA3F68500EE8168 /* NostrSDK */; };
+		0A0F188E2BA97CD800EE8168 /* Invoice.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0F188D2BA97CD800EE8168 /* Invoice.swift */; };
+		0A0F18A12BAC95DE00EE8168 /* SwiftUICoreImage in Frameworks */ = {isa = PBXBuildFile; productRef = 0A0F18A02BAC95DE00EE8168 /* SwiftUICoreImage */; };
 		0A206C532B7BE58000BDBFE1 /* Utxo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A206C522B7BE58000BDBFE1 /* Utxo.swift */; };
 		0A56E3382B792C6900CEC00A /* Pay_JoinApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A56E3372B792C6900CEC00A /* Pay_JoinApp.swift */; };
 		0A56E33A2B792C6900CEC00A /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A56E3392B792C6900CEC00A /* HomeView.swift */; };
@@ -27,7 +33,6 @@
 		0A56E34F2B795BC600CEC00A /* Crypto.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A56E34E2B795BC600CEC00A /* Crypto.swift */; };
 		0A56E3592B79760500CEC00A /* RPCAuth.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A56E3582B79760500CEC00A /* RPCAuth.swift */; };
 		0A56E35B2B79769B00CEC00A /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A56E35A2B79769B00CEC00A /* Extensions.swift */; };
-		0A56E3632B79895E00CEC00A /* secp256k1 in Frameworks */ = {isa = PBXBuildFile; productRef = 0A56E3622B79895E00CEC00A /* secp256k1 */; };
 		0A56E3662B7989EA00CEC00A /* RNCryptor in Frameworks */ = {isa = PBXBuildFile; productRef = 0A56E3652B7989EA00CEC00A /* RNCryptor */; };
 		0A56E3682B7BACA200CEC00A /* Commands.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A56E3672B7BACA200CEC00A /* Commands.swift */; };
 		0A56E36A2B7BAD5500CEC00A /* RPCParams.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A56E3692B7BAD5500CEC00A /* RPCParams.swift */; };
@@ -54,12 +59,16 @@
 		0A0F18322B7D1B4C00EE8168 /* ReceiveView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReceiveView.swift; sourceTree = "<group>"; };
 		0A0F18342B7D204600EE8168 /* StreamManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreamManager.swift; sourceTree = "<group>"; };
 		0A0F18362B7D3DC100EE8168 /* NostrResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NostrResponse.swift; sourceTree = "<group>"; };
-		0A0F18382B7D3DDC00EE8168 /* NostrEevent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NostrEevent.swift; sourceTree = "<group>"; };
+		0A0F18382B7D3DDC00EE8168 /* NostrEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NostrEvent.swift; sourceTree = "<group>"; };
 		0A0F183A2B7D417A00EE8168 /* KeyChain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyChain.swift; sourceTree = "<group>"; };
 		0A0F183F2B92BA3C00EE8168 /* LibWally.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; path = LibWally.xcframework; sourceTree = SOURCE_ROOT; };
 		0A0F184A2B954B8000EE8168 /* Errors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Errors.swift; sourceTree = "<group>"; };
 		0A0F184C2B954CF500EE8168 /* Messages.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Messages.swift; sourceTree = "<group>"; };
 		0A0F184E2B9575E900EE8168 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		0A0F184F2BA002FB00EE8168 /* NostrFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NostrFilter.swift; sourceTree = "<group>"; };
+		0A0F18632BA012BE00EE8168 /* Bech32.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Bech32.swift; sourceTree = "<group>"; };
+		0A0F18652BA125EA00EE8168 /* Nip4Encryption.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Nip4Encryption.swift; sourceTree = "<group>"; };
+		0A0F188D2BA97CD800EE8168 /* Invoice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Invoice.swift; sourceTree = "<group>"; };
 		0A206C522B7BE58000BDBFE1 /* Utxo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utxo.swift; sourceTree = "<group>"; };
 		0A56E3342B792C6900CEC00A /* Pay Join.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Pay Join.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		0A56E3372B792C6900CEC00A /* Pay_JoinApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Pay_JoinApp.swift; sourceTree = "<group>"; };
@@ -85,8 +94,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				0A56E3662B7989EA00CEC00A /* RNCryptor in Frameworks */,
-				0A56E3632B79895E00CEC00A /* secp256k1 in Frameworks */,
 				0A0F18412B92BA7100EE8168 /* LibWally.xcframework in Frameworks */,
+				0A0F188C2BA3F68500EE8168 /* NostrSDK in Frameworks */,
+				0A0F18A12BAC95DE00EE8168 /* SwiftUICoreImage in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -109,7 +119,10 @@
 			children = (
 				0A0F18342B7D204600EE8168 /* StreamManager.swift */,
 				0A0F18362B7D3DC100EE8168 /* NostrResponse.swift */,
-				0A0F18382B7D3DDC00EE8168 /* NostrEevent.swift */,
+				0A0F18382B7D3DDC00EE8168 /* NostrEvent.swift */,
+				0A0F184F2BA002FB00EE8168 /* NostrFilter.swift */,
+				0A0F18632BA012BE00EE8168 /* Bech32.swift */,
+				0A0F18652BA125EA00EE8168 /* Nip4Encryption.swift */,
 			);
 			path = Nostr;
 			sourceTree = "<group>";
@@ -121,6 +134,7 @@
 				0A206C522B7BE58000BDBFE1 /* Utxo.swift */,
 				0A0F184A2B954B8000EE8168 /* Errors.swift */,
 				0A0F184C2B954CF500EE8168 /* Messages.swift */,
+				0A0F188D2BA97CD800EE8168 /* Invoice.swift */,
 			);
 			path = Objects;
 			sourceTree = "<group>";
@@ -207,8 +221,9 @@
 			);
 			name = "Pay Join";
 			packageProductDependencies = (
-				0A56E3622B79895E00CEC00A /* secp256k1 */,
 				0A56E3652B7989EA00CEC00A /* RNCryptor */,
+				0A0F188B2BA3F68500EE8168 /* NostrSDK */,
+				0A0F18A02BAC95DE00EE8168 /* SwiftUICoreImage */,
 			);
 			productName = "Pay Join";
 			productReference = 0A56E3342B792C6900CEC00A /* Pay Join.app */;
@@ -239,8 +254,9 @@
 			);
 			mainGroup = 0A56E32B2B792C6900CEC00A;
 			packageReferences = (
-				0A56E3612B79895E00CEC00A /* XCRemoteSwiftPackageReference "secp256k1.swift" */,
 				0A56E3642B7989EA00CEC00A /* XCRemoteSwiftPackageReference "RNCryptor" */,
+				0A0F188A2BA3F68500EE8168 /* XCRemoteSwiftPackageReference "nostr-sdk-ios" */,
+				0A0F189F2BAC95DE00EE8168 /* XCRemoteSwiftPackageReference "SwiftUICoreImage" */,
 			);
 			productRefGroup = 0A56E3352B792C6900CEC00A /* Products */;
 			projectDirPath = "";
@@ -268,10 +284,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0A0F18642BA012BE00EE8168 /* Bech32.swift in Sources */,
 				0A56E36E2B7BC7AD00CEC00A /* ConfigView.swift in Sources */,
 				0A56E35B2B79769B00CEC00A /* Extensions.swift in Sources */,
 				0A0F18372B7D3DC100EE8168 /* NostrResponse.swift in Sources */,
 				0A56E36A2B7BAD5500CEC00A /* RPCParams.swift in Sources */,
+				0A0F18502BA002FB00EE8168 /* NostrFilter.swift in Sources */,
 				0A56E3682B7BACA200CEC00A /* Commands.swift in Sources */,
 				0A56E34D2B795B5700CEC00A /* BitcoinCoreRPC.swift in Sources */,
 				0A0F18352B7D204600EE8168 /* StreamManager.swift in Sources */,
@@ -286,7 +304,9 @@
 				0A56E3382B792C6900CEC00A /* Pay_JoinApp.swift in Sources */,
 				0A0F18332B7D1B4C00EE8168 /* ReceiveView.swift in Sources */,
 				0A0F184B2B954B8000EE8168 /* Errors.swift in Sources */,
-				0A0F18392B7D3DDC00EE8168 /* NostrEevent.swift in Sources */,
+				0A0F188E2BA97CD800EE8168 /* Invoice.swift in Sources */,
+				0A0F18392B7D3DDC00EE8168 /* NostrEvent.swift in Sources */,
+				0A0F18662BA125EA00EE8168 /* Nip4Encryption.swift in Sources */,
 				0A56E3592B79760500CEC00A /* RPCAuth.swift in Sources */,
 				0A206C532B7BE58000BDBFE1 /* Utxo.swift in Sources */,
 			);
@@ -426,6 +446,7 @@
 				ENABLE_PREVIEWS = YES;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "To scan an invoice in the form of a QR code.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -458,6 +479,7 @@
 				ENABLE_PREVIEWS = YES;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "To scan an invoice in the form of a QR code.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -502,12 +524,20 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		0A56E3612B79895E00CEC00A /* XCRemoteSwiftPackageReference "secp256k1.swift" */ = {
+		0A0F188A2BA3F68500EE8168 /* XCRemoteSwiftPackageReference "nostr-sdk-ios" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/GigaBitcoin/secp256k1.swift.git";
+			repositoryURL = "https://github.com/nostr-sdk/nostr-sdk-ios.git";
 			requirement = {
-				kind = exactVersion;
-				version = 0.10.0;
+				branch = main;
+				kind = branch;
+			};
+		};
+		0A0F189F2BAC95DE00EE8168 /* XCRemoteSwiftPackageReference "SwiftUICoreImage" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/danwood/SwiftUICoreImage.git";
+			requirement = {
+				branch = main;
+				kind = branch;
 			};
 		};
 		0A56E3642B7989EA00CEC00A /* XCRemoteSwiftPackageReference "RNCryptor" */ = {
@@ -521,10 +551,15 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		0A56E3622B79895E00CEC00A /* secp256k1 */ = {
+		0A0F188B2BA3F68500EE8168 /* NostrSDK */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 0A56E3612B79895E00CEC00A /* XCRemoteSwiftPackageReference "secp256k1.swift" */;
-			productName = secp256k1;
+			package = 0A0F188A2BA3F68500EE8168 /* XCRemoteSwiftPackageReference "nostr-sdk-ios" */;
+			productName = NostrSDK;
+		};
+		0A0F18A02BAC95DE00EE8168 /* SwiftUICoreImage */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0A0F189F2BAC95DE00EE8168 /* XCRemoteSwiftPackageReference "SwiftUICoreImage" */;
+			productName = SwiftUICoreImage;
 		};
 		0A56E3652B7989EA00CEC00A /* RNCryptor */ = {
 			isa = XCSwiftPackageProductDependency;

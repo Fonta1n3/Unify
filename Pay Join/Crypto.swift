@@ -12,15 +12,15 @@ import CryptoKit
 import LibWally
 
 class Crypto {
-//    static func sha256hash(_ text: String) -> String {
-//        let digest = SHA256.hash(data: text.utf8)
-//        
-//        return digest.map { String(format: "%02hhx", $0) }.joined()
-//    }
     
     static func encrypt(_ data: Data) -> Data? {
-        guard let key = KeyChain.getData("encKey") else { print("no encKey saved"); return nil }
-        
+        guard let key = KeyChain.getData("encKey") else {
+            if KeyChain.set(Crypto.privateKeyData(), forKey: "encKey") {
+                return encrypt(data)
+            } else {
+                print("no encKey saved"); return nil
+            }
+        }
         return try? ChaChaPoly.seal(data, using: SymmetricKey(data: key)).combined
     }
     
@@ -68,7 +68,7 @@ class Crypto {
     static var randomKey: String {
         let privateKey = try! secp256k1.KeyAgreement.PrivateKey()
         let publicKey = privateKey.publicKey
-        return publicKey.rawRepresentation.hex
+        return hex_encode(publicKey.dataRepresentation)//publicKey.rawRepresentation.hex
     }
     
     static var privateKey: String {
@@ -84,8 +84,8 @@ class Crypto {
     }
     
     static func publicKey(privKey: String) -> String {
-        let privateKey = try! secp256k1.KeyAgreement.PrivateKey(rawRepresentation: hex_decode(privKey) ?? [])
-        return privateKey.publicKey.rawRepresentation.hex
+        let privateKey = try! secp256k1.KeyAgreement.PrivateKey(dataRepresentation: hex_decode(privKey) ?? [])
+        return hex_encode(privateKey.publicKey.dataRepresentation)
     }
     
     static func hex_decode(_ str: String) -> [UInt8]? {

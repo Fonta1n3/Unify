@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import NostrSDK
 
 final class StreamManager: NSObject {
         
@@ -19,10 +20,10 @@ final class StreamManager: NSObject {
     let subId = Crypto.randomKey
     var connected = false
     var timer = Timer()
+    var subscribeTo = ""
     
     
-    private override init() {
-    }
+    private override init() {}
     
     
     func receive() {
@@ -41,7 +42,7 @@ final class StreamManager: NSObject {
                 self.receive()
             })
         }
-        DispatchQueue.global().asyncAfter(deadline: .now() + 1, execute: workItem)
+        DispatchQueue.global().asyncAfter(deadline: .now() + 0.1, execute: workItem)
     }
     
     
@@ -147,61 +148,60 @@ final class StreamManager: NSObject {
     }
     
     
-    private func writeReqEvent() {
-//        DataManager.retrieve(entityName: "Credentials") { [weak self] creds in
-//            guard let self = self, let creds = creds else { return }
-//            let subscriptionKey = creds["nostr_subscription"] as? String ?? ""
-//            let filter:NostrFilter = NostrFilter.filter_authors(["\(subscriptionKey.dropFirst(2))"])
-//            let encoder = JSONEncoder()
-//            var req = "[\"REQ\",\"\(self.subId)\","
-//            guard let filter_json = try? encoder.encode(filter) else {
-//                #if DEBUG
-//                print("converting to jsonData failing...")
-//                #endif
-//                return
-//            }
-//            let filter_json_str = String(decoding: filter_json, as: UTF8.self)
-//            req += filter_json_str
-//            req += "]"
-//            print("req: \(req)")
-//            self.sendMsg(string: req)
-//        }
+    func writeReqEvent() {
+        print("writeReqEvent")
+        //DataManager.retrieve(entityName: "Credentials") { [weak self] creds in
+            //guard let self = self, let creds = creds else { return }
+        let filter: NostrFilter = NostrFilter.filter_authors([subscribeTo])
+            let encoder = JSONEncoder()
+            var req = "[\"REQ\",\"\(self.subId)\","
+            guard let filter_json = try? encoder.encode(filter) else {
+                #if DEBUG
+                print("converting to jsonData failing...")
+                #endif
+                return
+            }
+            let filter_json_str = String(decoding: filter_json, as: UTF8.self)
+            req += filter_json_str
+            req += "]"
+            print("req: \(req)")
+            self.sendMsg(string: req)
+        //}
     }
     
     
-    func writeEvent(content: String) {
-//        DataManager.retrieve { [weak self] creds in
-//            guard let self = self, let creds = creds else { return }
-//            
-//            let pubkey = creds["nostr_pubkey"] as? String ?? ""
-//            let privkey = creds["nostr_privkey"] as? String ?? ""
-//            
-//            let ev = NostrEvent(content: content,
-//                                pubkey: "\(pubkey.dropFirst(2))",
-//                                kind: NostrKind.ephemeral.rawValue,
-//                                tags: [])
-//            ev.calculate_id()
-//            ev.sign(privkey: privkey)
-//            guard !ev.too_big else {
-//                self.onDoneBlock!((nil, "Nostr event is too big to send..."))
-//                #if DEBUG
-//                print("event too big: \(content.count)")
-//                #endif
-//                return
-//            }
-//            guard ev.validity == .ok else {
-//                self.onDoneBlock!((nil, "Nostr event is invalid!"))
-//                #if DEBUG
-//                print("event invalid")
-//                #endif
-//                return
-//            }
-//            let encoder = JSONEncoder()
-//            let event_data = try! encoder.encode(ev)
-//            let event = String(decoding: event_data, as: UTF8.self)
-//            let encoded = "[\"EVENT\",\(event)]"
-//            self.sendMsg(string: encoded)
-//        }
+    public func writeEvent(content: String, pubkey: PublicKey, privKey: PrivateKey) {
+        let pubkey = pubkey.hex
+        let privkey = privKey.dataRepresentation
+        print("pubkey: \(pubkey)")
+        
+        let ev = NostrEvent(content: content,
+                            pubkey: pubkey,
+                            kind: 4,
+                            tags: [])
+        
+        print("send ev: \(ev)")
+        ev.calculate_id()
+        ev.sign(privkey: privkey)
+        guard !ev.too_big else {
+            self.onDoneBlock!((nil, "Nostr event is too big to send..."))
+            #if DEBUG
+            print("event too big: \(content.count)")
+            #endif
+            return
+        }
+        guard ev.validity == .ok else {
+            self.onDoneBlock!((nil, "Nostr event is invalid!"))
+            #if DEBUG
+            print("event invalid")
+            #endif
+            return
+        }
+        let encoder = JSONEncoder()
+        let event_data = try! encoder.encode(ev)
+        let event = String(decoding: event_data, as: UTF8.self)
+        let encoded = "[\"EVENT\",\(event)]"
+        self.sendMsg(string: encoded)
     }
     
     
@@ -297,10 +297,12 @@ final class StreamManager: NSObject {
     }
     
     
-    func openWebSocket(urlString: String) {
-        if let url = URL(string: urlString) {
+    func openWebSocket(subscribeTo: String, relayUrlString: String) {
+        print("openWebSocket url: \(relayUrlString)")
+        if let url = URL(string: relayUrlString) {
             let request = URLRequest(url: url)
             let session = URLSession(configuration: .default, delegate: self, delegateQueue: nil)
+            self.subscribeTo = subscribeTo
             self.webSocket = session.webSocketTask(with: request)
             self.opened = true
             self.webSocket?.resume()
@@ -327,6 +329,7 @@ final class StreamManager: NSObject {
 extension StreamManager: URLSessionWebSocketDelegate {
     
     func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didOpenWithProtocol protocol: String?) {
+        print("didOpenWithProtocol")
         opened = true
         writeReqEvent()
     }
