@@ -9,8 +9,9 @@ import SwiftUI
 import PhotosUI
 import NostrSDK
 #if os(macOS)
-import SwiftUICoreImage
+
 #endif
+import SwiftUICoreImage
 
 struct SendView: View, DirectMessageEncrypting {
     @State private var receiversNpub = ""
@@ -57,77 +58,97 @@ struct SendView: View, DirectMessageEncrypting {
                         
                     }
                     #elseif os(iOS)
-                    Button("Scan QR") {
-                        
-
+                        VStack {
+                            PhotosPicker("Upload", selection: $pickerItem, matching: .images)
+                                .onChange(of: pickerItem) {
+                                    Task {
+                                        selectedImage = try await pickerItem?.loadTransferable(type: Image.self)
+                                        let ciImage: CIImage = CIImage(uiImage: selectedImage!.asUIImage())
+                                        guard let invoice = invoiceFromQrImage(ciImage: ciImage) else { return }
+                                        print("invoice amount: \(invoice.amount!)")
+                                        uploadedInvoice = invoice
+                                        invoiceUploaded = true
+                                        // display the invoice amount and recipient address
+                                        // ask user to select utxos to pay the invoice
+                                        // create the initial psbt
+                                    }
+                                }
+                        }
+                    
+                    
+                    // Scan QR
+                    Button("", systemImage: "qrcode.viewfinder") {}
+                    .onTapGesture {
+                        print("scan qr")
                     }
+                    
+                    
+                    
                     #endif
                     
-                    // Should be one paste button
-                    
-                    Button("Paste text") {
+                    Button("", systemImage: "doc.on.clipboard") {}
+                    .onTapGesture {
+                        print("paste")
+                            
                         #if os(macOS)
                         let pasteboard = NSPasteboard.general
-                        guard let url = pasteboard.pasteboardItems?.first?.string(forType: .string) else { return }
+                        
+                        guard let url = pasteboard.pasteboardItems?.first?.string(forType: .string) else {
+                            let type = NSPasteboard.PasteboardType.tiff
+                            guard let imgData = pasteboard.data(forType: type) else { return }
+                            let ciImage: CIImage = CIImage(nsImage: NSImage(data: imgData)!)
+                            guard let invoice = invoiceFromQrImage(ciImage: ciImage) else { return }
+                            uploadedInvoice = invoice
+                            invoiceUploaded = true
+                            return
+                        }
+                        
                         print("url: \(url)")
                         //"bitcoin:tb1qk3xlyqptz4tgujfe5mamt2r4ftrwrt6sf9qawr?amount=0.0002?pj=nostr:npub1vkuquw8fsjggwgeuzdceyp8fsxu07dwtlgpt8zwfsqaw2u7sg45qj6m5jm"
                         let invoice = Invoice(url)
                         guard let _ = invoice.address, let _ = invoice.amount, let _ = invoice.recipientsNpub else { return }
                         uploadedInvoice = invoice
                         invoiceUploaded = true
+                        
                         #elseif os(iOS)
-                        #endif
-                    }
-                    
-                    
-                    Button("Paste QR") {
-                        #if os(macOS)
-                        let pb = NSPasteboard.general
-                        let type = NSPasteboard.PasteboardType.tiff
-                        guard let imgData = pb.data(forType: type) else { return }
-                        let ciImage: CIImage = CIImage(nsImage: NSImage(data: imgData)!)
-                        guard let invoice = invoiceFromQrImage(ciImage: ciImage) else { return }
+                        let pasteboard = UIPasteboard.general
+                        
+                        guard let image = pasteboard.image else {
+                            guard let text = pasteboard.string else { return }
+                            let invoice = Invoice(text)
+                            guard let _ = invoice.address, let _ = invoice.amount, let _ = invoice.recipientsNpub else { return }
+                            uploadedInvoice = invoice
+                            invoiceUploaded = true
+                            return
+                        }
+                         
+                        guard let ciImage = image.ciImage, let invoice = invoiceFromQrImage(ciImage: ciImage) else { return }
                         uploadedInvoice = invoice
                         invoiceUploaded = true
-                        #else
-                        // write code for ios
-                        #endif                        
+                        #endif
                     }
                 }
             }
             .alert("Invoice incomplete!", isPresented: $invoiceIncomplete) {
                 Button("OK", role: .cancel) { }
             }
-            
         } else {
-            
             Section("Invoice Address") {
-                    Label(uploadedInvoice!.address!, systemImage: "qrcode")
+                Label(uploadedInvoice!.address!, systemImage: "qrcode")
             }
             Section("Invoice Amount") {
-                //HStack {
-                    Label("\(uploadedInvoice!.amount!) btc", systemImage: "bitcoinsign.circle")
-//                    Button("Pay invoice") {
-//                        payInvoice(invoice: uploadedInvoice!)
-//                    }
-                //}
-                
+                Label("\(uploadedInvoice!.amount!) btc", systemImage: "bitcoinsign.circle")
             }
             Button("Clear") {
                 uploadedInvoice = nil
                 invoiceUploaded = false
             }
             .alert("Select a UTXO to pay with.", isPresented: $promptToSelectUtxo) {}
-            
         }
         
         Spacer()
-        //List() {
             if showUtxos {
-                //UploadView()
-                
                 Section("Spendable UTXOs") {
-                    
                     ForEach(Array(utxos.enumerated()), id: \.offset) { index, utxo in
                         if let address = utxo.address, let amount = utxo.amount, let confs = utxo.confs, confs > 0 {
                             let textLabel = address + ": " + "\(amount)" + " btc"
@@ -144,16 +165,6 @@ struct SendView: View, DirectMessageEncrypting {
                                 }
                                 
                             }
-                            
-                        
-//                                .onTapGesture {
-//                                    print("tapped \(utxo.address ?? "No address associated with that utxo.")")
-//                                    selectedUtxos.append(utxo)
-//                                    utxos.remove(at: index)
-//                                    utxoSelected = true
-//                                }
-                            
-                            
                                 .onAppear {
                                     spendableBalance += utxo.amount ?? 0.0
                                     print("spendableBalance: \(spendableBalance)")
@@ -164,20 +175,6 @@ struct SendView: View, DirectMessageEncrypting {
                 Section("Total Spendable Balance") {
                     Text("\(spendableBalance) btc")
                 }
-//                Button("Deselect Utxo's") {
-//                    selectedUtxos.removeAll()
-//                    utxoSelected = false
-//                }
-                
-//                if selectedUtxos.count > 0 {
-//                    Section("UTXOs to Pay Invoice") {
-//                        ForEach(Array(selectedUtxos.enumerated()), id: \.offset) { index, utxo in
-//                                let textLabel = address + ": " + "\(amount)" + " btc"
-//                                Text(textLabel)
-//                        }
-//                    }
-//                }
-                
             }
             Section("Nostr Connection") {
                 HStack() {
@@ -195,7 +192,6 @@ struct SendView: View, DirectMessageEncrypting {
                         Label("Not connected to \(urlString)", systemImage: "circle.fill")
                             .labelStyle(.titleOnly)
                     }
-                    
                 }
             }
         }
@@ -203,12 +199,9 @@ struct SendView: View, DirectMessageEncrypting {
             urlString = UserDefaults.standard.string(forKey: "nostrRelay") ?? "wss://relay.damus.io"
             getUtxos()            
         }
-        
         .alert(errorToShow, isPresented: $showNostrError) {
             Button("OK", role: .cancel) { }
         }
-        
-            
     }
     
     
@@ -237,7 +230,6 @@ struct SendView: View, DirectMessageEncrypting {
             guard let recipientPubkey = PublicKey(npub: recipientsNpub) else { return }
             
             StreamManager.shared.openWebSocket(subscribeTo: recipientPubkey.hex, relayUrlString: urlString)
-            
             
             StreamManager.shared.eoseReceivedBlock = { _ in
                 print("eos received :)")
@@ -283,7 +275,6 @@ struct SendView: View, DirectMessageEncrypting {
         }
         return invoice
     }
-   
     
     
     private func encryptedMessage(sendersKeypair: Keypair, receiversNpub: String, message: String) -> String? {
@@ -321,146 +312,8 @@ struct SendView: View, DirectMessageEncrypting {
                 showUtxos = true
             }
         }
-//        let unfinalizedSignedPsbt = "cHNidP8BAHMCAAAAAY8nutGgJdyYGXWiBEb45Hoe9lWGbkxh/6bNiOJdCDuDAAAAAAD+////AtyVuAUAAAAAF6kUHehJ8GnSdBUOOv6ujXLrWmsJRDCHgIQeAAAAAAAXqRR3QJbbz0hnQ8IvQ0fptGn+votneofTAAAAAAEBIKgb1wUAAAAAF6kU3k4ekGHKWRNbA1rV5tR5kEVDVNCHAQQWABTHikVyU1WCjVZYB03VJg1fy2mFMCICAxWawBqg1YdUxLTYt9NJ7R7fzws2K09rVRBnI6KFj4UWRzBEAiB8Q+A6dep+Rz92vhy26lT0AjZn4PRLi8Bf9qoB/CMk0wIgP/Rj2PWZ3gEjUkTlhDRNAQ0gXwTO7t9n+V14pZ6oljUBIgYDFZrAGqDVh1TEtNi300ntHt/PCzYrT2tVEGcjooWPhRYYSFzWUDEAAIABAACAAAAAgAEAAAAAAAAAAAEAFgAURvYaK7pzgo7lhbSl/DeUan2MxRQiAgLKC8FYHmmul/HrXLUcMDCjfuRg/dhEkG8CO26cEC6vfBhIXNZQMQAAgAEAAIAAAACAAQAAAAEAAAAAAA=="
-//
-//        let originalPsbt = "cHNidP8BAHMCAAAAAY8nutGgJdyYGXWiBEb45Hoe9lWGbkxh/6bNiOJdCDuDAAAAAAD+////AtyVuAUAAAAAF6kUHehJ8GnSdBUOOv6ujXLrWmsJRDCHgIQeAAAAAAAXqRR3QJbbz0hnQ8IvQ0fptGn+votneofTAAAAAAEBIKgb1wUAAAAAF6kU3k4ekGHKWRNbA1rV5tR5kEVDVNCHAQcXFgAUx4pFclNVgo1WWAdN1SYNX8tphTABCGsCRzBEAiB8Q+A6dep+Rz92vhy26lT0AjZn4PRLi8Bf9qoB/CMk0wIgP/Rj2PWZ3gEjUkTlhDRNAQ0gXwTO7t9n+V14pZ6oljUBIQMVmsAaoNWHVMS02LfTSe0e388LNitPa1UQZyOihY+FFgABABYAFEb2Giu6c4KO5YW0pfw3lGp9jMUUAAA="
-//
-//        let payjoinProposal = "cHNidP8BAJwCAAAAAo8nutGgJdyYGXWiBEb45Hoe9lWGbkxh/6bNiOJdCDuDAAAAAAD+////jye60aAl3JgZdaIERvjkeh72VYZuTGH/ps2I4l0IO4MBAAAAAP7///8CJpW4BQAAAAAXqRQd6EnwadJ0FQ46/q6NcutaawlEMIcACT0AAAAAABepFHdAltvPSGdDwi9DR+m0af6+i2d6h9MAAAAAAAEBIICEHgAAAAAAF6kUyPLL+cphRyyI5GTUazV0hF2R2NWHAQcXFgAUX4BmVeWSTJIEwtUb5TlPS/ntohABCGsCRzBEAiBnu3tA3yWlT0WBClsXXS9j69Bt+waCs9JcjWtNjtv7VgIge2VYAaBeLPDB6HGFlpqOENXMldsJezF9Gs5amvDQRDQBIQJl1jz1tBt8hNx2owTm+4Du4isx0pmdKNMNIjjaMHFfrQAAAA=="
-//
-//        let payjoinProposalFilledWithSendersInformation = "cHNidP8BAJwCAAAAAo8nutGgJdyYGXWiBEb45Hoe9lWGbkxh/6bNiOJdCDuDAAAAAAD+////jye60aAl3JgZdaIERvjkeh72VYZuTGH/ps2I4l0IO4MBAAAAAP7///8CJpW4BQAAAAAXqRQd6EnwadJ0FQ46/q6NcutaawlEMIcACT0AAAAAABepFHdAltvPSGdDwi9DR+m0af6+i2d6h9MAAAAAAQEgqBvXBQAAAAAXqRTeTh6QYcpZE1sDWtXm1HmQRUNU0IcBBBYAFMeKRXJTVYKNVlgHTdUmDV/LaYUwIgYDFZrAGqDVh1TEtNi300ntHt/PCzYrT2tVEGcjooWPhRYYSFzWUDEAAIABAACAAAAAgAEAAAAAAAAAAAEBIICEHgAAAAAAF6kUyPLL+cphRyyI5GTUazV0hF2R2NWHAQcXFgAUX4BmVeWSTJIEwtUb5TlPS/ntohABCGsCRzBEAiBnu3tA3yWlT0WBClsXXS9j69Bt+waCs9JcjWtNjtv7VgIge2VYAaBeLPDB6HGFlpqOENXMldsJezF9Gs5amvDQRDQBIQJl1jz1tBt8hNx2owTm+4Du4isx0pmdKNMNIjjaMHFfrQABABYAFEb2Giu6c4KO5YW0pfw3lGp9jMUUIgICygvBWB5prpfx61y1HDAwo37kYP3YRJBvAjtunBAur3wYSFzWUDEAAIABAACAAAAAgAEAAAABAAAAAAA="
-        
-        //BitcoinCoreRPC
-//        DataManager.retrieve(entityName: "Credentials", completion: { credentials in
-//            guard let credentials = credentials else {
-//                print("no credentials")
-//                return
-//            }
-//
-//            guard let rpcpass = credentials["rpcpass"] as? Data else {
-//                print("no rpcpass")
-//                return
-//            }
-//
-//            guard let rpcauthcreds = RPCAuth().generateCreds(username: "PayJoin", password: String(data: rpcpass, encoding: .utf8)) else {
-//                print("unable to derive rpcauth.")
-//                return
-//            }
-//
-//            let p: Decode_Psbt = .init(["psbt": unfinalizedSignedPsbt])
-//
-//            BitcoinCoreRPC.shared.btcRPC(method: .decodepsbt(param: p)) { (response, errorDesc) in
-//                print("response: \(response)")
-//            }
-//        })
     }
 }
-
-
-
-//struct SendView: View {
-//    @State private var showUtxos = false
-//    @State private var utxos: [Utxo] = []
-//    @State private var spendableBalance = 0.0
-//    @State private var showNostrError = false
-//    @State private var errorToShow = ""
-//    @State private var nostrConnected = false
-//        
-//    let urlString = UserDefaults.standard.string(forKey: "nostrRelay") ?? "wss://nostr-relay.wlvs.space"
-//    
-//    var body: some View {
-//        Spacer()
-//        Label("Send", systemImage: "arrow.triangle.branch")
-//        List() {
-//            if showUtxos {
-//                UploadView()
-//                Section("Total Spendable Balance") {
-//                    Text("\(spendableBalance) btc")
-//                }
-//                Section("Spendable UTXOs") {
-//                    ForEach(utxos, id: \.self) { utxo in
-//                        if let address = utxo.address, let amount = utxo.amount, let confs = utxo.confs, confs > 0 {
-//                            let textLabel = address + ": " + "\(amount)" + " btc"
-//                            Text(textLabel)
-//                                .onTapGesture {
-//                                    print("tapped \(utxo.address ?? "No address associated with that utxo.")")
-//                                    
-//                                }
-//                                .onAppear {
-//                                    spendableBalance += utxo.amount ?? 0.0
-//                                    print("spendableBalance: \(spendableBalance)")
-//                                }
-//                        }
-//                        
-//                        
-//                    }
-//                }
-//            } else {
-//                UploadView()
-//            }
-//            Section("Nostr Connection") {
-//                HStack() {
-//                    if nostrConnected {
-//                        Image(systemName: "circle.fill")
-//                            .colorMultiply(.green)
-//                        
-//                        Label("Connected to \(urlString)", systemImage: "circle.fill")
-//                            .labelStyle(.titleOnly)
-//                        
-//                    } else {
-//                        Image(systemName: "circle.fill")
-//                            .colorMultiply(.red)
-//                        
-//                        Label("Not connected to \(urlString)", systemImage: "circle.fill")
-//                            .labelStyle(.titleOnly)                        
-//                    }
-//                    
-//                }
-//            }
-//        }
-//        .onAppear {
-//            getUtxos()
-//            StreamManager.shared.eoseReceivedBlock = { _ in
-//                print("eos received :)")
-//                nostrConnected = true
-//            }
-//            StreamManager.shared.errorReceivedBlock = { nostrError in
-//                print("nostr received error")
-//                showNostrError = true
-//                errorToShow = nostrError
-//                nostrConnected = false
-//            }
-//            StreamManager.shared.openWebSocket(urlString: urlString)
-//            
-//        }
-//        .alert(errorToShow, isPresented: $showNostrError) {
-//            Button("OK", role: .cancel) { }
-//        }
-//    }
-//    
-//    private func getUtxos() {
-//        let p:List_Unspent = .init([:])
-//        BitcoinCoreRPC.shared.btcRPC(method: .listunspent(p)) { (response, errorDesc) in
-//            guard let response = response as? [[String: Any]] else {
-//                // else prompt to import a psbt or a utxo
-//                return
-//            }
-//            
-//            var sendable = false
-//            
-//            for item in response {
-//                let utxo: Utxo = .init(item)
-//                if let confs = utxo.confs, let solvable = utxo.solvable {
-//                    if confs > 0 && solvable {
-//                        sendable = true
-//                        utxos.append(utxo)
-//                    }
-//                }
-//            }
-//            if sendable {
-//                // prompt to import a psbt to send or select a utxo
-//                showUtxos = true
-//            }
-//        }
 ////        let unfinalizedSignedPsbt = "cHNidP8BAHMCAAAAAY8nutGgJdyYGXWiBEb45Hoe9lWGbkxh/6bNiOJdCDuDAAAAAAD+////AtyVuAUAAAAAF6kUHehJ8GnSdBUOOv6ujXLrWmsJRDCHgIQeAAAAAAAXqRR3QJbbz0hnQ8IvQ0fptGn+votneofTAAAAAAEBIKgb1wUAAAAAF6kU3k4ekGHKWRNbA1rV5tR5kEVDVNCHAQQWABTHikVyU1WCjVZYB03VJg1fy2mFMCICAxWawBqg1YdUxLTYt9NJ7R7fzws2K09rVRBnI6KFj4UWRzBEAiB8Q+A6dep+Rz92vhy26lT0AjZn4PRLi8Bf9qoB/CMk0wIgP/Rj2PWZ3gEjUkTlhDRNAQ0gXwTO7t9n+V14pZ6oljUBIgYDFZrAGqDVh1TEtNi300ntHt/PCzYrT2tVEGcjooWPhRYYSFzWUDEAAIABAACAAAAAgAEAAAAAAAAAAAEAFgAURvYaK7pzgo7lhbSl/DeUan2MxRQiAgLKC8FYHmmul/HrXLUcMDCjfuRg/dhEkG8CO26cEC6vfBhIXNZQMQAAgAEAAIAAAACAAQAAAAEAAAAAAA=="
 ////        
 ////        let originalPsbt = "cHNidP8BAHMCAAAAAY8nutGgJdyYGXWiBEb45Hoe9lWGbkxh/6bNiOJdCDuDAAAAAAD+////AtyVuAUAAAAAF6kUHehJ8GnSdBUOOv6ujXLrWmsJRDCHgIQeAAAAAAAXqRR3QJbbz0hnQ8IvQ0fptGn+votneofTAAAAAAEBIKgb1wUAAAAAF6kU3k4ekGHKWRNbA1rV5tR5kEVDVNCHAQcXFgAUx4pFclNVgo1WWAdN1SYNX8tphTABCGsCRzBEAiB8Q+A6dep+Rz92vhy26lT0AjZn4PRLi8Bf9qoB/CMk0wIgP/Rj2PWZ3gEjUkTlhDRNAQ0gXwTO7t9n+V14pZ6oljUBIQMVmsAaoNWHVMS02LfTSe0e388LNitPa1UQZyOihY+FFgABABYAFEb2Giu6c4KO5YW0pfw3lGp9jMUUAAA="
@@ -468,32 +321,6 @@ struct SendView: View, DirectMessageEncrypting {
 ////        let payjoinProposal = "cHNidP8BAJwCAAAAAo8nutGgJdyYGXWiBEb45Hoe9lWGbkxh/6bNiOJdCDuDAAAAAAD+////jye60aAl3JgZdaIERvjkeh72VYZuTGH/ps2I4l0IO4MBAAAAAP7///8CJpW4BQAAAAAXqRQd6EnwadJ0FQ46/q6NcutaawlEMIcACT0AAAAAABepFHdAltvPSGdDwi9DR+m0af6+i2d6h9MAAAAAAAEBIICEHgAAAAAAF6kUyPLL+cphRyyI5GTUazV0hF2R2NWHAQcXFgAUX4BmVeWSTJIEwtUb5TlPS/ntohABCGsCRzBEAiBnu3tA3yWlT0WBClsXXS9j69Bt+waCs9JcjWtNjtv7VgIge2VYAaBeLPDB6HGFlpqOENXMldsJezF9Gs5amvDQRDQBIQJl1jz1tBt8hNx2owTm+4Du4isx0pmdKNMNIjjaMHFfrQAAAA=="
 ////        
 ////        let payjoinProposalFilledWithSendersInformation = "cHNidP8BAJwCAAAAAo8nutGgJdyYGXWiBEb45Hoe9lWGbkxh/6bNiOJdCDuDAAAAAAD+////jye60aAl3JgZdaIERvjkeh72VYZuTGH/ps2I4l0IO4MBAAAAAP7///8CJpW4BQAAAAAXqRQd6EnwadJ0FQ46/q6NcutaawlEMIcACT0AAAAAABepFHdAltvPSGdDwi9DR+m0af6+i2d6h9MAAAAAAQEgqBvXBQAAAAAXqRTeTh6QYcpZE1sDWtXm1HmQRUNU0IcBBBYAFMeKRXJTVYKNVlgHTdUmDV/LaYUwIgYDFZrAGqDVh1TEtNi300ntHt/PCzYrT2tVEGcjooWPhRYYSFzWUDEAAIABAACAAAAAgAEAAAAAAAAAAAEBIICEHgAAAAAAF6kUyPLL+cphRyyI5GTUazV0hF2R2NWHAQcXFgAUX4BmVeWSTJIEwtUb5TlPS/ntohABCGsCRzBEAiBnu3tA3yWlT0WBClsXXS9j69Bt+waCs9JcjWtNjtv7VgIge2VYAaBeLPDB6HGFlpqOENXMldsJezF9Gs5amvDQRDQBIQJl1jz1tBt8hNx2owTm+4Du4isx0pmdKNMNIjjaMHFfrQABABYAFEb2Giu6c4KO5YW0pfw3lGp9jMUUIgICygvBWB5prpfx61y1HDAwo37kYP3YRJBvAjtunBAur3wYSFzWUDEAAIABAACAAAAAgAEAAAABAAAAAAA="
-//        
-//        //BitcoinCoreRPC
-////        DataManager.retrieve(entityName: "Credentials", completion: { credentials in
-////            guard let credentials = credentials else {
-////                print("no credentials")
-////                return
-////            }
-////            
-////            guard let rpcpass = credentials["rpcpass"] as? Data else {
-////                print("no rpcpass")
-////                return
-////            }
-////            
-////            guard let rpcauthcreds = RPCAuth().generateCreds(username: "PayJoin", password: String(data: rpcpass, encoding: .utf8)) else {
-////                print("unable to derive rpcauth.")
-////                return
-////            }
-////            
-////            let p: Decode_Psbt = .init(["psbt": unfinalizedSignedPsbt])
-////            
-////            BitcoinCoreRPC.shared.btcRPC(method: .decodepsbt(param: p)) { (response, errorDesc) in
-////                print("response: \(response)")
-////            }
-////        })
-//    }
-//}
 
 #if os(macOS)
     
@@ -531,4 +358,35 @@ struct SendView: View, DirectMessageEncrypting {
     }
 #endif
 
+extension View {
+// This function changes our View to UIView, then calls another function
+// to convert the newly-made UIView to a UIImage.
+    public func asUIImage() -> UIImage {
+        let controller = UIHostingController(rootView: self)
+        
+ // Set the background to be transparent incase the image is a PNG, WebP or (Static) GIF
+        controller.view.backgroundColor = .clear
+        
+        controller.view.frame = CGRect(x: 0, y: CGFloat(Int.max), width: 1, height: 1)
+        UIApplication.shared.windows.first!.rootViewController?.view.addSubview(controller.view)
+        
+        let size = controller.sizeThatFits(in: UIScreen.main.bounds.size)
+        controller.view.bounds = CGRect(origin: .zero, size: size)
+        controller.view.sizeToFit()
+        
+// here is the call to the function that converts UIView to UIImage: `.asUIImage()`
+        let image = controller.view.asUIImage()
+        controller.view.removeFromSuperview()
+        return image
+    }
+}
 
+extension UIView {
+// This is the function to convert UIView to UIImage
+    public func asUIImage() -> UIImage {
+        let renderer = UIGraphicsImageRenderer(bounds: bounds)
+        return renderer.image { rendererContext in
+            layer.render(in: rendererContext.cgContext)
+        }
+    }
+}

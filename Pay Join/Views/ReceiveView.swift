@@ -21,6 +21,7 @@ struct ReceiveView: View {
     @State private var address = ""
     @State private var npub = ""
     @State private var showCopiedAlert = false
+    @State private var payeeNpub = ""
     
     var body: some View {
         Spacer()
@@ -33,27 +34,34 @@ struct ReceiveView: View {
                 TextField("Recipient address", text: $address)
             }
             
-            if let amountDouble = Double(amount) {
-                if amountDouble > 0 && address != "" {
-                    Section("PayJoin Invoice") {
-                        let url = "bitcoin:\($address.wrappedValue)?amount=\($amount.wrappedValue)&pj=nostr:\($npub.wrappedValue)"
-                        QRView(url: url)
+            if let amountDouble = Double(amount), amountDouble > 0 && address != "" {
+                //if amountDouble > 0 && address != "" {
+                Section("PayJoin Invoice") {
+                    let url = "bitcoin:\($address.wrappedValue)?amount=\($amount.wrappedValue)&pj=nostr:\($npub.wrappedValue)"
+                    QRView(url: url)
+                    
+                    Text(url)
+                        .truncationMode(.middle)
+                    HStack {
+                        ShareLink("", item: url)
                         
-                        Text(url)
-                            .truncationMode(.middle)
-                        HStack {
-                            ShareLink("Share", item: url)
-                            
-                            Button("Copy", systemImage: "doc.on.doc") {
-                                #if os(macOS)
-                                NSPasteboard.general.clearContents()
-                                NSPasteboard.general.setString(url, forType: .string)
-                                #elseif os(iOS)
-                                UIPasteboard.general.string = url
-                                #endif
-                                showCopiedAlert = true
-                            }
+                        Button("", systemImage: "doc.on.doc") {}
+                        .onTapGesture {
+                            #if os(macOS)
+                            NSPasteboard.general.clearContents()
+                            NSPasteboard.general.setString(url, forType: .string)
+                            #elseif os(iOS)
+                            UIPasteboard.general.string = url
+                            #endif
+                            showCopiedAlert = true
                         }
+                    }
+                }
+                Section("Request") {
+                    TextField("Payee Npub", text: $payeeNpub)
+                    Button("Request") {
+                        print("connect to nostr now and request...")
+                        print("payee npub: \(payeeNpub)")
                     }
                 }
             }
@@ -136,6 +144,8 @@ struct QRView: View {
     #endif
     
     #if os(iOS)
+    
+    
     func generateQRCode(from string: String) -> UIImage {
         let context = CIContext()
         let filter = CIFilter.qrCodeGenerator()
