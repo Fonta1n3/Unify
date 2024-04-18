@@ -22,6 +22,7 @@
 		0A0F188C2BA3F68500EE8168 /* NostrSDK in Frameworks */ = {isa = PBXBuildFile; productRef = 0A0F188B2BA3F68500EE8168 /* NostrSDK */; };
 		0A0F188E2BA97CD800EE8168 /* Invoice.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0F188D2BA97CD800EE8168 /* Invoice.swift */; };
 		0A0F18A12BAC95DE00EE8168 /* SwiftUICoreImage in Frameworks */ = {isa = PBXBuildFile; productRef = 0A0F18A02BAC95DE00EE8168 /* SwiftUICoreImage */; };
+		0A0F18A42BD158B800EE8168 /* CodeScanner in Frameworks */ = {isa = PBXBuildFile; productRef = 0A0F18A32BD158B800EE8168 /* CodeScanner */; };
 		0A206C532B7BE58000BDBFE1 /* Utxo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A206C522B7BE58000BDBFE1 /* Utxo.swift */; };
 		0A56E3382B792C6900CEC00A /* Pay_JoinApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A56E3372B792C6900CEC00A /* Pay_JoinApp.swift */; };
 		0A56E33A2B792C6900CEC00A /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A56E3392B792C6900CEC00A /* HomeView.swift */; };
@@ -97,6 +98,7 @@
 				0A0F18412B92BA7100EE8168 /* LibWally.xcframework in Frameworks */,
 				0A0F188C2BA3F68500EE8168 /* NostrSDK in Frameworks */,
 				0A0F18A12BAC95DE00EE8168 /* SwiftUICoreImage in Frameworks */,
+				0A0F18A42BD158B800EE8168 /* CodeScanner in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -224,6 +226,7 @@
 				0A56E3652B7989EA00CEC00A /* RNCryptor */,
 				0A0F188B2BA3F68500EE8168 /* NostrSDK */,
 				0A0F18A02BAC95DE00EE8168 /* SwiftUICoreImage */,
+				0A0F18A32BD158B800EE8168 /* CodeScanner */,
 			);
 			productName = "Pay Join";
 			productReference = 0A56E3342B792C6900CEC00A /* Pay Join.app */;
@@ -257,6 +260,7 @@
 				0A56E3642B7989EA00CEC00A /* XCRemoteSwiftPackageReference "RNCryptor" */,
 				0A0F188A2BA3F68500EE8168 /* XCRemoteSwiftPackageReference "nostr-sdk-ios" */,
 				0A0F189F2BAC95DE00EE8168 /* XCRemoteSwiftPackageReference "SwiftUICoreImage" */,
+				0A0F18A22BD158B800EE8168 /* XCRemoteSwiftPackageReference "CodeScanner" */,
 			);
 			productRefGroup = 0A56E3352B792C6900CEC00A /* Products */;
 			projectDirPath = "";
@@ -540,6 +544,14 @@
 				kind = branch;
 			};
 		};
+		0A0F18A22BD158B800EE8168 /* XCRemoteSwiftPackageReference "CodeScanner" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/twostraws/CodeScanner";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.4.1;
+			};
+		};
 		0A56E3642B7989EA00CEC00A /* XCRemoteSwiftPackageReference "RNCryptor" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/RNCryptor/RNCryptor.git";
@@ -560,6 +572,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 0A0F189F2BAC95DE00EE8168 /* XCRemoteSwiftPackageReference "SwiftUICoreImage" */;
 			productName = SwiftUICoreImage;
+		};
+		0A0F18A32BD158B800EE8168 /* CodeScanner */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0A0F18A22BD158B800EE8168 /* XCRemoteSwiftPackageReference "CodeScanner" */;
+			productName = CodeScanner;
 		};
 		0A56E3652B7989EA00CEC00A /* RNCryptor */ = {
 			isa = XCSwiftPackageProductDependency;

@@ -29,19 +29,21 @@ struct ReceiveView: View {
         List() {
             Section("Amount") {
                 TextField("Amount in btc", text: $amount)
+                    .keyboardType(.decimalPad)
             }
             Section("Recipient Address") {
                 TextField("Recipient address", text: $address)
+                    .keyboardType(.default)
             }
             
             if let amountDouble = Double(amount), amountDouble > 0 && address != "" {
-                //if amountDouble > 0 && address != "" {
                 Section("PayJoin Invoice") {
                     let url = "bitcoin:\($address.wrappedValue)?amount=\($amount.wrappedValue)&pj=nostr:\($npub.wrappedValue)"
                     QRView(url: url)
                     
                     Text(url)
                         .truncationMode(.middle)
+                        .lineLimit(1)
                     HStack {
                         ShareLink("", item: url)
                         
