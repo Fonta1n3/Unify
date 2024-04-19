@@ -8,14 +8,14 @@
 import SwiftUI
 import PhotosUI
 import NostrSDK
-import CodeScanner
-#if os(macOS)
 
+#if os(iOS)
+import CodeScanner
 #endif
 import SwiftUICoreImage
 
-struct SendView: View, DirectMessageEncrypting {
-    @State private var receiversNpub = ""
+struct SendView: View {
+    //@State private var receiversNpub = ""
     @State private var address = ""
     @State private var amount = ""
     @State private var pickerItem: PhotosPickerItem?
@@ -24,8 +24,8 @@ struct SendView: View, DirectMessageEncrypting {
     @State private var uploadedInvoice: Invoice?
     @State private var invoiceUploaded = false
     @State private var promptToSelectUtxo = false
-    @State private var selectedUtxos: [Utxo] = []
-    @State private var utxoSelected = false
+    //@State private var selectedUtxos: [Utxo] = []
+    //@State private var utxoSelected = false
     @State private var showUtxos = false
     @State private var utxos: [Utxo] = []
     @State private var spendableBalance = 0.0
@@ -40,57 +40,7 @@ struct SendView: View, DirectMessageEncrypting {
         Spacer()
         Label("Send", systemImage: "bitcoinsign")
         List() {
-            if !invoiceUploaded {
-                Section("Upload a BIP21 Invoice") {
-                    HStack {
-                        VStack {
-                            PhotosPicker("Upload", selection: $pickerItem, matching: .images)
-                                .onChange(of: pickerItem) {
-                                    Task {
-                                        selectedImage = try await pickerItem?.loadTransferable(type: Image.self)
-                                        #if os(macOS)
-                                        let ciImage: CIImage = CIImage(nsImage: selectedImage!.renderAsImage()!)
-                                        #elseif os(iOS)
-                                        let ciImage: CIImage = CIImage(uiImage: selectedImage!.asUIImage())
-                                        #endif
-                                        uploadedInvoice = invoiceFromQrImage(ciImage: ciImage)
-                                        invoiceUploaded = uploadedInvoice != nil
-                                    }
-                                }
-                        }
-                        #if os(iOS)
-                        // Can't scan QR on macOS with SwiftUI...
-                        Button("", systemImage: "qrcode.viewfinder") {}
-                            .onTapGesture {
-                                print("scan qr")
-                                isShowingScanner = true
-                            }
-                        #endif
-                        
-                        Button("", systemImage: "doc.on.clipboard") {}
-                            .onTapGesture {
-                                print("paste")
-                                uploadedInvoice = handlePaste()
-                                invoiceUploaded = uploadedInvoice != nil
-                            }
-                    }
-                }
-                .alert("Invoice incomplete!", isPresented: $invoiceIncomplete) {
-                    Button("OK", role: .cancel) { }
-                }
-            } else {
-                Section("Invoice Address") {
-                    Label(uploadedInvoice!.address!, systemImage: "qrcode")
-                }
-                Section("Invoice Amount") {
-                    Label("\(uploadedInvoice!.amount!) btc", systemImage: "bitcoinsign.circle")
-                }
-                Button("Clear invoice") {
-                    uploadedInvoice = nil
-                    invoiceUploaded = false
-                }
-                .alert("Select a UTXO to pay with.", isPresented: $promptToSelectUtxo) {}
-            }
+            UploadInvoiceView()
             
             if showUtxos {
                 SpendableUtxosView(utxos: utxos, uploadedInvoice: uploadedInvoice)
@@ -99,6 +49,7 @@ struct SendView: View, DirectMessageEncrypting {
                     Text("No spendable utxos.")
                 }
             }
+            
             Section("Nostr Connection") {
                 HStack() {
                     if nostrConnected {
@@ -128,40 +79,14 @@ struct SendView: View, DirectMessageEncrypting {
         .alert("No spendable utxos.", isPresented: $showNoUtxosMessage) {
             Button("OK", role: .cancel) {}
         }
+        #if os(iOS)
         .sheet(isPresented: $isShowingScanner) {
             CodeScannerView(codeTypes: [.qr], simulatedData: "", completion: handleScan)
         }
-    }
-    
-    
-    
-    func handlePaste() -> Invoice? {
-        #if os(macOS)
-        let pasteboard = NSPasteboard.general
-        guard let url = pasteboard.pasteboardItems?.first?.string(forType: .string) else {
-            let type = NSPasteboard.PasteboardType.tiff
-            guard let imgData = pasteboard.data(forType: type) else { return nil }
-            let ciImage: CIImage = CIImage(nsImage: NSImage(data: imgData)!)
-            return invoiceFromQrImage(ciImage: ciImage)
-        }
-        
-        let invoice = Invoice(url)
-        guard let _ = invoice.address, let _ = invoice.amount, let _ = invoice.recipientsNpub else { return nil }
-        return invoice
-                                
-        #elseif os(iOS)
-        let pasteboard = UIPasteboard.general
-        guard let image = pasteboard.image else {
-            guard let text = pasteboard.string else { return nil }
-            let invoice = Invoice(text)
-            guard let _ = invoice.address, let _ = invoice.amount, let _ = invoice.recipientsNpub else { return nil }
-            return invoice
-        }
-        guard let ciImage = image.ciImage, let invoice = invoiceFromQrImage(ciImage: ciImage) else { return nil }
-        return invoice
         #endif
     }
     
+    #if os(iOS)
     func handleScan(result: Result<ScanResult, ScanError>) {
         isShowingScanner = false
         switch result {
@@ -179,22 +104,7 @@ struct SendView: View, DirectMessageEncrypting {
             print("Scanning failed: \(error.localizedDescription)")
         }
     }
-    
-    
-    private func invoiceFromQrImage(ciImage: CIImage) -> Invoice? {
-        var qrCodeText = ""
-        let detector: CIDetector = CIDetector(ofType: CIDetectorTypeQRCode, context: nil, options: [CIDetectorAccuracy: CIDetectorAccuracyHigh])!
-        let features = detector.features(in: ciImage)
-        for feature in features as! [CIQRCodeFeature] {
-            qrCodeText += feature.messageString!
-        }
-        let invoice = Invoice(qrCodeText)
-        guard let _ = invoice.address, let _ = invoice.recipientsNpub, let _ = invoice.amount else {
-            return nil
-        }
-        return invoice
-    }
-    
+    #endif
     
     private func getUtxos() {
         let p:List_Unspent = .init([:])
@@ -268,6 +178,7 @@ public extension NSView {
 }
 #endif
 
+#if os(iOS)
 extension View {
     // This function changes our View to UIView, then calls another function
     // to convert the newly-made UIView to a UIImage.
@@ -300,6 +211,110 @@ extension UIView {
         }
     }
 }
+#endif
+
+struct UploadInvoiceView: View {
+    @State private var pickerItem: PhotosPickerItem?
+    @State private var selectedImage: Image?
+    @State private var uploadedInvoice: Invoice?
+    @State private var invoiceUploaded = false
+    @State private var isShowingScanner = false
+    @State private var invoiceIncomplete = false
+    
+    var body: some View {
+        if !invoiceUploaded {
+            Section("Upload a BIP21 Invoice") {
+                HStack {
+                    VStack {
+                        PhotosPicker("Upload", selection: $pickerItem, matching: .images)
+                            .onChange(of: pickerItem) {
+                                Task {
+                                    selectedImage = try await pickerItem?.loadTransferable(type: Image.self)
+#if os(macOS)
+                                    let ciImage: CIImage = CIImage(nsImage: selectedImage!.renderAsImage()!)
+#elseif os(iOS)
+                                    let ciImage: CIImage = CIImage(uiImage: selectedImage!.asUIImage())
+#endif
+                                    uploadedInvoice = invoiceFromQrImage(ciImage: ciImage)
+                                    invoiceUploaded = uploadedInvoice != nil
+                                }
+                            }
+                    }
+#if os(iOS)
+                    // Can't scan QR on macOS with SwiftUI...
+                    Button("", systemImage: "qrcode.viewfinder") {}
+                        .onTapGesture {
+                            print("scan qr")
+                            isShowingScanner = true
+                        }
+#endif
+                    
+                    Button("", systemImage: "doc.on.clipboard") {}
+                        .onTapGesture {
+                            print("paste")
+                            uploadedInvoice = handlePaste()
+                            invoiceUploaded = uploadedInvoice != nil
+                        }
+                }
+            }
+            .alert("Invoice incomplete!", isPresented: $invoiceIncomplete) {
+                Button("OK", role: .cancel) { }
+            }
+        } else {
+            Section("Invoice Address") {
+                Label(uploadedInvoice!.address!, systemImage: "qrcode")
+            }
+            Section("Invoice Amount") {
+                Label("\(uploadedInvoice!.amount!) btc", systemImage: "bitcoinsign.circle")
+            }
+            Button("Clear invoice") {
+                uploadedInvoice = nil
+                invoiceUploaded = false
+            }
+        }
+    }
+    
+    private func invoiceFromQrImage(ciImage: CIImage) -> Invoice? {
+        var qrCodeText = ""
+        let detector: CIDetector = CIDetector(ofType: CIDetectorTypeQRCode, context: nil, options: [CIDetectorAccuracy: CIDetectorAccuracyHigh])!
+        let features = detector.features(in: ciImage)
+        for feature in features as! [CIQRCodeFeature] {
+            qrCodeText += feature.messageString!
+        }
+        let invoice = Invoice(qrCodeText)
+        guard let _ = invoice.address, let _ = invoice.recipientsNpub, let _ = invoice.amount else {
+            return nil
+        }
+        return invoice
+    }
+    
+    private func handlePaste() -> Invoice? {
+        #if os(macOS)
+        let pasteboard = NSPasteboard.general
+        guard let url = pasteboard.pasteboardItems?.first?.string(forType: .string) else {
+            let type = NSPasteboard.PasteboardType.tiff
+            guard let imgData = pasteboard.data(forType: type) else { return nil }
+            let ciImage: CIImage = CIImage(nsImage: NSImage(data: imgData)!)
+            return invoiceFromQrImage(ciImage: ciImage)
+        }
+        
+        let invoice = Invoice(url)
+        guard let _ = invoice.address, let _ = invoice.amount, let _ = invoice.recipientsNpub else { return nil }
+        return invoice
+                                
+        #elseif os(iOS)
+        let pasteboard = UIPasteboard.general
+        guard let image = pasteboard.image else {
+            guard let text = pasteboard.string else { return nil }
+            let invoice = Invoice(text)
+            guard let _ = invoice.address, let _ = invoice.amount, let _ = invoice.recipientsNpub else { return nil }
+            return invoice
+        }
+        guard let ciImage = image.ciImage, let invoice = invoiceFromQrImage(ciImage: ciImage) else { return nil }
+        return invoice
+        #endif
+    }
+}
 
 struct SpendableUtxosView: View, DirectMessageEncrypting {
     @State private var urlString = UserDefaults.standard.string(forKey: "nostrRelay") ?? "wss://relay.damus.io"
@@ -316,7 +331,6 @@ struct SpendableUtxosView: View, DirectMessageEncrypting {
         self.uploadedInvoice = uploadedInvoice
     }
     var body: some View {
-        Spacer()
         Section("Spendable UTXOs") {
            ForEach(Array(utxos.enumerated()), id: \.offset) { (index, utxo) in
                if let address = utxo.address, let amount = utxo.amount, let confs = utxo.confs, confs > 0 {
@@ -326,7 +340,6 @@ struct SpendableUtxosView: View, DirectMessageEncrypting {
                        
                        if let uploadedInvoice = uploadedInvoice {
                            Button("Pay Join this UTXO") {
-                               print("pay using utxo: \(address)")
                                payInvoice(invoice: uploadedInvoice, utxo: utxo)
                            }
                            .disabled(amount < uploadedInvoice.amount!)

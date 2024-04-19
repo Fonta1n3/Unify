@@ -29,11 +29,15 @@ struct ReceiveView: View {
         List() {
             Section("Amount") {
                 TextField("Amount in btc", text: $amount)
+                #if os(iOS)
                     .keyboardType(.decimalPad)
+                #endif
             }
             Section("Recipient Address") {
                 TextField("Recipient address", text: $address)
+                #if os(iOS)
                     .keyboardType(.default)
+                #endif
             }
             
             if let amountDouble = Double(amount), amountDouble > 0 && address != "" {
