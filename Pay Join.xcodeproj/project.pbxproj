@@ -22,7 +22,9 @@
 		0A0F188C2BA3F68500EE8168 /* NostrSDK in Frameworks */ = {isa = PBXBuildFile; productRef = 0A0F188B2BA3F68500EE8168 /* NostrSDK */; };
 		0A0F188E2BA97CD800EE8168 /* Invoice.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0F188D2BA97CD800EE8168 /* Invoice.swift */; };
 		0A0F18A12BAC95DE00EE8168 /* SwiftUICoreImage in Frameworks */ = {isa = PBXBuildFile; productRef = 0A0F18A02BAC95DE00EE8168 /* SwiftUICoreImage */; };
-		0A0F18A62BD2AABD00EE8168 /* CodeScanner in Resources */ = {isa = PBXBuildFile; fileRef = 0A0F18A52BD2AABD00EE8168 /* CodeScanner */; };
+		0A0F18AB2BD2B1C700EE8168 /* AVCaptureDevice+bestForBuiltInCamera.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0F18A72BD2B1C700EE8168 /* AVCaptureDevice+bestForBuiltInCamera.swift */; };
+		0A0F18AD2BD2B1C700EE8168 /* ScannerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0F18A92BD2B1C700EE8168 /* ScannerViewController.swift */; };
+		0A0F18AE2BD2B1C700EE8168 /* CodeScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0F18AA2BD2B1C700EE8168 /* CodeScanner.swift */; };
 		0A206C532B7BE58000BDBFE1 /* Utxo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A206C522B7BE58000BDBFE1 /* Utxo.swift */; };
 		0A56E3382B792C6900CEC00A /* Pay_JoinApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A56E3372B792C6900CEC00A /* Pay_JoinApp.swift */; };
 		0A56E33A2B792C6900CEC00A /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A56E3392B792C6900CEC00A /* HomeView.swift */; };
@@ -40,6 +42,8 @@
 		0A56E36C2B7BC74000CEC00A /* SendView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A56E36B2B7BC73F00CEC00A /* SendView.swift */; };
 		0A56E36E2B7BC7AD00CEC00A /* ConfigView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A56E36D2B7BC7AD00CEC00A /* ConfigView.swift */; };
 		0A56E3702B7BC9E400CEC00A /* RPCPort.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A56E36F2B7BC9E400CEC00A /* RPCPort.swift */; };
+		0A6A83E02BD95D8000A6546A /* Signer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A6A83DF2BD95D8000A6546A /* Signer.swift */; };
+		0A6A83E22BD95E8700A6546A /* SignerStruct.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A6A83E12BD95E8700A6546A /* SignerStruct.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -70,7 +74,9 @@
 		0A0F18632BA012BE00EE8168 /* Bech32.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Bech32.swift; sourceTree = "<group>"; };
 		0A0F18652BA125EA00EE8168 /* Nip4Encryption.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Nip4Encryption.swift; sourceTree = "<group>"; };
 		0A0F188D2BA97CD800EE8168 /* Invoice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Invoice.swift; sourceTree = "<group>"; };
-		0A0F18A52BD2AABD00EE8168 /* CodeScanner */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = CodeScanner; path = ../../CodeScanner; sourceTree = "<group>"; };
+		0A0F18A72BD2B1C700EE8168 /* AVCaptureDevice+bestForBuiltInCamera.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "AVCaptureDevice+bestForBuiltInCamera.swift"; sourceTree = "<group>"; };
+		0A0F18A92BD2B1C700EE8168 /* ScannerViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScannerViewController.swift; sourceTree = "<group>"; };
+		0A0F18AA2BD2B1C700EE8168 /* CodeScanner.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CodeScanner.swift; sourceTree = "<group>"; };
 		0A206C522B7BE58000BDBFE1 /* Utxo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utxo.swift; sourceTree = "<group>"; };
 		0A56E3342B792C6900CEC00A /* Pay Join.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Pay Join.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		0A56E3372B792C6900CEC00A /* Pay_JoinApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Pay_JoinApp.swift; sourceTree = "<group>"; };
@@ -88,6 +94,8 @@
 		0A56E36B2B7BC73F00CEC00A /* SendView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SendView.swift; sourceTree = "<group>"; };
 		0A56E36D2B7BC7AD00CEC00A /* ConfigView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigView.swift; sourceTree = "<group>"; };
 		0A56E36F2B7BC9E400CEC00A /* RPCPort.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RPCPort.swift; sourceTree = "<group>"; };
+		0A6A83DF2BD95D8000A6546A /* Signer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Signer.swift; sourceTree = "<group>"; };
+		0A6A83E12BD95E8700A6546A /* SignerStruct.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignerStruct.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -137,6 +145,7 @@
 				0A0F184A2B954B8000EE8168 /* Errors.swift */,
 				0A0F184C2B954CF500EE8168 /* Messages.swift */,
 				0A0F188D2BA97CD800EE8168 /* Invoice.swift */,
+				0A6A83E12BD95E8700A6546A /* SignerStruct.swift */,
 			);
 			path = Objects;
 			sourceTree = "<group>";
@@ -160,6 +169,16 @@
 			path = CoreData;
 			sourceTree = "<group>";
 		};
+		0A0F18AF2BD2B1D100EE8168 /* CodeScanner */ = {
+			isa = PBXGroup;
+			children = (
+				0A0F18A72BD2B1C700EE8168 /* AVCaptureDevice+bestForBuiltInCamera.swift */,
+				0A0F18AA2BD2B1C700EE8168 /* CodeScanner.swift */,
+				0A0F18A92BD2B1C700EE8168 /* ScannerViewController.swift */,
+			);
+			path = CodeScanner;
+			sourceTree = "<group>";
+		};
 		0A56E32B2B792C6900CEC00A = {
 			isa = PBXGroup;
 			children = (
@@ -180,8 +199,8 @@
 		0A56E3362B792C6900CEC00A /* Pay Join */ = {
 			isa = PBXGroup;
 			children = (
-				0A0F18A52BD2AABD00EE8168 /* CodeScanner */,
 				0A0F183F2B92BA3C00EE8168 /* LibWally.xcframework */,
+				0A0F18AF2BD2B1D100EE8168 /* CodeScanner */,
 				0A56E3372B792C6900CEC00A /* Pay_JoinApp.swift */,
 				0A56E33B2B792C6C00CEC00A /* Assets.xcassets */,
 				0A56E3422B792C6C00CEC00A /* Pay_Join.xcdatamodeld */,
@@ -194,6 +213,7 @@
 				0A0F18452B92BCD700EE8168 /* Objects */,
 				0A0F18442B92BCB600EE8168 /* Nostr */,
 				0A0F183A2B7D417A00EE8168 /* KeyChain.swift */,
+				0A6A83DF2BD95D8000A6546A /* Signer.swift */,
 			);
 			path = "Pay Join";
 			sourceTree = "<group>";
@@ -277,7 +297,6 @@
 			files = (
 				0A56E33F2B792C6C00CEC00A /* Preview Assets.xcassets in Resources */,
 				0A56E33C2B792C6C00CEC00A /* Assets.xcassets in Resources */,
-				0A0F18A62BD2AABD00EE8168 /* CodeScanner in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -289,13 +308,16 @@
 			buildActionMask = 2147483647;
 			files = (
 				0A0F18642BA012BE00EE8168 /* Bech32.swift in Sources */,
+				0A0F18AE2BD2B1C700EE8168 /* CodeScanner.swift in Sources */,
 				0A56E36E2B7BC7AD00CEC00A /* ConfigView.swift in Sources */,
 				0A56E35B2B79769B00CEC00A /* Extensions.swift in Sources */,
 				0A0F18372B7D3DC100EE8168 /* NostrResponse.swift in Sources */,
 				0A56E36A2B7BAD5500CEC00A /* RPCParams.swift in Sources */,
+				0A6A83E02BD95D8000A6546A /* Signer.swift in Sources */,
 				0A0F18502BA002FB00EE8168 /* NostrFilter.swift in Sources */,
 				0A56E3682B7BACA200CEC00A /* Commands.swift in Sources */,
 				0A56E34D2B795B5700CEC00A /* BitcoinCoreRPC.swift in Sources */,
+				0A0F18AB2BD2B1C700EE8168 /* AVCaptureDevice+bestForBuiltInCamera.swift in Sources */,
 				0A0F18352B7D204600EE8168 /* StreamManager.swift in Sources */,
 				0A56E34B2B794AC700CEC00A /* DataManager.swift in Sources */,
 				0A56E36C2B7BC74000CEC00A /* SendView.swift in Sources */,
@@ -303,12 +325,14 @@
 				0A0F184D2B954CF500EE8168 /* Messages.swift in Sources */,
 				0A0F183B2B7D417A00EE8168 /* KeyChain.swift in Sources */,
 				0A56E3702B7BC9E400CEC00A /* RPCPort.swift in Sources */,
+				0A6A83E22BD95E8700A6546A /* SignerStruct.swift in Sources */,
 				0A56E3442B792C6C00CEC00A /* Pay_Join.xcdatamodeld in Sources */,
 				0A56E34F2B795BC600CEC00A /* Crypto.swift in Sources */,
 				0A56E3382B792C6900CEC00A /* Pay_JoinApp.swift in Sources */,
 				0A0F18332B7D1B4C00EE8168 /* ReceiveView.swift in Sources */,
 				0A0F184B2B954B8000EE8168 /* Errors.swift in Sources */,
 				0A0F188E2BA97CD800EE8168 /* Invoice.swift in Sources */,
+				0A0F18AD2BD2B1C700EE8168 /* ScannerViewController.swift in Sources */,
 				0A0F18392B7D3DDC00EE8168 /* NostrEvent.swift in Sources */,
 				0A0F18662BA125EA00EE8168 /* Nip4Encryption.swift in Sources */,
 				0A56E3592B79760500CEC00A /* RPCAuth.swift in Sources */,

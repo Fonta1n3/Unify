@@ -7,6 +7,7 @@
 
 import SwiftUI
 import UniformTypeIdentifiers
+import NostrSDK
 
 struct ConfigView: View {
     @State private var rpcUser = "PayJoin"
@@ -15,13 +16,15 @@ struct ConfigView: View {
     @State private var rpcWallet = ""
     @State private var rpcWallets: [String] = []
     @State private var rpcPort = UserDefaults.standard.object(forKey: "rpcPort") as? String ?? "8332"
-    @State private var nostrRelay = UserDefaults.standard.object(forKey: "nostrRelay") as? String ?? "wss://nostr-relay.wlvs.space"
+    @State private var nostrRelay = UserDefaults.standard.object(forKey: "nostrRelay") as? String ?? "wss://relay.damus.io"
     @State private var nostrEncryptionWords = ""
     @State private var showBitcoinCoreError = false
     @State private var bitcoinCoreError = ""
     @State private var showNoCredsError = false
     @State private var showCopiedAlert = false
     @State private var showEncWords = false
+    @State private var peerNpub = UserDefaults.standard.object(forKey: "peerNpub") as? String ?? ""
+    @State private var nostrPrivkey = ""
     
     private func setValues() {
         print("setValues")
@@ -60,7 +63,6 @@ struct ConfigView: View {
                     }
                     
                     rpcAuth = rpcauthcreds.rpcAuth
-                    print("rpcAuth: \(rpcAuth)")
                     
                     if let walletName = UserDefaults.standard.object(forKey: "walletName") as? String {
                         rpcWallet = walletName
@@ -69,6 +71,19 @@ struct ConfigView: View {
                     rpcPort = UserDefaults.standard.object(forKey: "rpcPort") as? String ?? "8332"
                     
                     nostrRelay = UserDefaults.standard.object(forKey: "nostrRelay") as? String ?? "wss://relay.damus.io"
+                    
+                    guard let encNostrPrivkey = credentials["nostrPrivkey"] as? Data else {
+                        print("no nostrPrivkey")
+                        return
+                    }
+                    
+                    guard let nostrPrivkeyData = Crypto.decrypt(encNostrPrivkey) else {
+                        print("unable to decrypt nostrPrivkey")
+                        return
+                    }
+                                        
+                    self.nostrPrivkey = nostrPrivkeyData.hex
+                    self.peerNpub = UserDefaults.standard.object(forKey: "peerNpub") as? String ?? ""
                     
                     BitcoinCoreRPC.shared.btcRPC(method: .listwallets) { (response, errorDesc) in
                         guard errorDesc == nil else {
@@ -102,7 +117,7 @@ struct ConfigView: View {
     
     
     private func updateRpcUser(rpcUser: String) {
-        DataManager.update(keyToUpdate: "rpcUser", newValue: rpcUser) { updated in
+        DataManager.update(entityName: "Credentials", keyToUpdate: "rpcUser", newValue: rpcUser) { updated in
             if updated {
                 self.rpcUser = rpcUser
             } else {
@@ -116,9 +131,24 @@ struct ConfigView: View {
         
         guard let encryptedRpcPass = Crypto.encrypt(rpcPassData) else { return }
         
-        DataManager.update(keyToUpdate: "rpcPass", newValue: encryptedRpcPass) { updated in
+        DataManager.update(entityName: "Credentials", keyToUpdate: "rpcPass", newValue: encryptedRpcPass) { updated in
             if updated {
                 rpcPassword = rpcPass
+                setValues()
+            } else {
+                //show error
+            }
+        }
+    }
+    
+    private func updateNostrPrivkey(nostrPrivkey: String) {
+        guard let nostrPrivkeyData = nostrPrivkey.data(using: .utf8) else { return }
+        
+        guard let encryptedNostrPrivkey = Crypto.encrypt(nostrPrivkeyData) else { return }
+        
+        DataManager.update(entityName: "Credentials", keyToUpdate: "nostrPrivkey", newValue: encryptedNostrPrivkey) { updated in
+            if updated {
+                self.nostrPrivkey = nostrPrivkey
                 setValues()
             } else {
                 //show error
@@ -221,6 +251,57 @@ struct ConfigView: View {
                     }
                     
             }
+            
+            if nostrPrivkey != "" {
+                Section("Nostr privkey") {
+                    HStack {
+                        SecureField("", text: $nostrPrivkey)
+                            .onSubmit {
+                                updateNostrPrivkey(nostrPrivkey: nostrPrivkey)
+                            }
+                        Button("", systemImage: "arrow.clockwise") {
+                            updateRpcPass(rpcPass: Crypto.privateKey)
+                            setValues()
+                        }
+                    }
+                   
+                }
+                
+                Section("Nostr npub") {
+                    let privKey = PrivateKey(hex: nostrPrivkey)!
+                    let keypair = Keypair(privateKey: privKey)
+                    let npub = keypair!.publicKey.npub
+                    
+                    HStack {
+                        Text(npub)
+                            .truncationMode(.middle)
+                            .lineLimit(1)
+                        
+                        ShareLink(" ", item: npub)
+                        
+                        Button(" ", systemImage: "doc.on.doc") {
+                            #if os(macOS)
+                            NSPasteboard.general.clearContents()
+                            NSPasteboard.general.setString(npub, forType: .string)
+                            #elseif os(iOS)
+                            UIPasteboard.general.string = npub
+                            #endif
+                            showCopiedAlert = true
+                        }
+                    }
+                }
+                
+                Section("Subscribe to") {
+                    TextField("", text: $peerNpub)
+                        .onSubmit {
+                            UserDefaults.standard.setValue(peerNpub, forKey: "peerNpub")
+                            setValues()
+                        }
+                        .autocorrectionDisabled()
+                }
+            }
+            
+            
         }
         .formStyle(.grouped)
         .multilineTextAlignment(.leading)
@@ -239,7 +320,7 @@ struct ConfigView: View {
         .alert(CoreDataError.notPresent.localizedDescription, isPresented: $showNoCredsError) {
             Button("OK", role: .cancel) { }
         }
-        .alert("RPC Authentication copied ✓", isPresented: $showCopiedAlert) {
+        .alert("Copied ✓", isPresented: $showCopiedAlert) {
             Button("OK", role: .cancel) { }
         }
     }

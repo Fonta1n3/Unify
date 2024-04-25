@@ -1,0 +1,222 @@
+//
+//  Signer.swift
+//  Pay Join
+//
+//  Created by Peter Denton on 4/24/24.
+//
+
+import Foundation
+import LibWally
+
+class Signer {
+    class func masterKey(words: String, coinType: String, passphrase: String) -> String? {
+        let chain: Network
+        
+        if coinType == "0" {
+            chain = .mainnet
+        } else {
+            chain = .testnet
+        }
+        
+        if let mnmemonic = try? BIP39Mnemonic(words: words) {
+            let seedHex = mnmemonic.seedHex(passphrase: passphrase)
+            if let hdMasterKey = try? HDKey(seed: seedHex, network: chain), let xpriv = hdMasterKey.xpriv {
+                return xpriv
+            }
+        }
+        
+        return nil
+    }
+    
+    class func sign(psbt: String, passphrase: String?, completion: @escaping ((psbt: String?, rawTx: String?, errorMessage: String?)) -> Void) {
+        var seedsToSignWith = [[String:Any]]()
+        var xprvToSignWith: HDKey? = nil
+        var psbtToSign:PSBT!
+        var chain:Network!
+        var coinType:String!
+        
+        func reset() {
+            seedsToSignWith.removeAll()
+            xprvToSignWith = nil
+            psbtToSign = nil
+            chain = nil
+        }
+        
+        func finalize() {
+            let param:Finalize_Psbt = .init(["psbt": psbtToSign.description])
+            BitcoinCoreRPC.shared.btcRPC(method: .finalizepsbt(param)) { (object, errorDescription) in
+                if let result = object as? NSDictionary {
+                    if let complete = result["complete"] as? Bool {
+                        if complete {
+                            let hex = result["hex"] as! String
+                            let psbt = psbtToSign.description
+                            reset()
+                            // Now always return the non finalized psbt as exporting signed psbt's can be useful.
+                            completion((psbt, hex, nil))
+                        } else {
+                            let psbt = result["psbt"] as! String
+                            reset()
+                            completion((psbt, nil, nil))
+                        }
+                    } else {
+                        reset()
+                        completion((nil, nil, errorDescription))
+                    }
+                } else {
+                    reset()
+                    completion((nil, nil, errorDescription))
+                }
+            }
+        }
+        
+        func processWithActiveWallet() {
+            let param: Wallet_Process_PSBT = .init(["psbt": psbtToSign.description])
+            BitcoinCoreRPC.shared.btcRPC(method: .walletprocesspsbt(param: param)) { (object, errorDescription) in
+                if let dict = object as? NSDictionary {
+                    if let processedPsbt = dict["psbt"] as? String {
+                        do {
+                            psbtToSign = try PSBT(psbt: processedPsbt, network: chain)
+                            if xprvToSignWith != nil {
+                                attemptToSignLocally()
+                            } else {
+                                finalize()
+                            }
+                        } catch {
+                            if xprvToSignWith != nil {
+                                attemptToSignLocally()
+                            } else {
+                                finalize()
+                            }
+                        }
+                    }
+                } else {
+                    reset()
+                    completion((nil, nil, errorDescription))
+                }
+            }
+            
+        }
+        
+        func attemptToSignLocally() {
+            /// Need to ensure similiar seeds do not sign mutliple times. This can happen if a user adds the same seed multiple times.
+            if xprvToSignWith != nil {
+                var signableKeys = [String]()
+                    let inputs = psbtToSign.inputs
+                    for (x, input) in inputs.enumerated() {
+                        /// Create an array of child keys that we know can sign our inputs.
+                        if let origins: [PubKey : KeyOrigin] = input.canSignOrigins(with: xprvToSignWith!) {
+                            for origin in origins {
+                                if let childKey = try? xprvToSignWith!.derive(using: origin.value.path) {
+                                    if let privKey = childKey.privKey {
+                                        precondition(privKey.pubKey == origin.key)
+                                        signableKeys.append(privKey.wif)
+                                    }
+                                }
+                            }
+                        } else {
+                            // Libwally does not like signing with direct decendants of m (e.g. m/0/0), so if above fails we can try and fall back on this, deriving child keys directly from root xprv.
+                            if let origins = input.origins {
+                                for origin in origins {
+                                    if let path = try? BIP32Path(string: origin.value.path.description.replacingOccurrences(of: "m/", with: "")) {
+                                        if var childKey = try? xprvToSignWith!.derive(using: path) {
+                                            if var privKey = childKey.privKey {
+                                                signableKeys.append(privKey.wif)
+                                                // Overwrite vars with dummies for security
+                                                privKey = try! Key(wif: "KwfUAErbeHJCafVr37aRnYcobent1tVV1iADD2k3T8VV1pD2qpWs", network: .mainnet)
+                                                childKey = try! HDKey(base58: "xpub6FETvV487Sr4VSV9Ya5em5ZAug4dtnFwgnMG7TFAfkJDHoQ1uohXft49cFenfpJHbPueMnfyxtBoAuvSu7XNL9bbLzcM1QJCPwtofqv3dqC")
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        
+                        /// Once the above loops complete we remove an duplicate signing keys from the array then sign the psbt with each unique key.
+                        if x + 1 == inputs.count {
+                            var uniqueSigners = Array(Set(signableKeys))
+                            if uniqueSigners.count > 0 {
+                                for (s, signer) in uniqueSigners.enumerated() {
+                                    if var signingKey = try? Key(wif: signer, network: chain) {
+                                        psbtToSign = try? psbtToSign.signed(with: signingKey)//psbtToSign.sign(signingKey)
+                                        signingKey = try! Key(wif: "KwfUAErbeHJCafVr37aRnYcobent1tVV1iADD2k3T8VV1pD2qpWs", network: .mainnet)
+                                        /// Once we completed the signing loop we finalize with our node.
+                                        if s + 1 == uniqueSigners.count {
+                                            xprvToSignWith = nil
+                                            uniqueSigners.removeAll()
+                                            signableKeys.removeAll()
+                                            finalize()
+                                        }
+                                    }
+                                }
+                            } else {
+                                xprvToSignWith = nil
+                                uniqueSigners.removeAll()
+                                signableKeys.removeAll()
+                                finalize()
+                            }
+                        }
+                    }
+            } else {
+                finalize()
+            }
+        }
+        
+        /// Fetch wallets on the same network
+        func getSeeds() {
+            seedsToSignWith.removeAll()
+            DataManager.retrieve(entityName: "Signers") { signer in
+                guard let signer = signer else {
+                    print("no signer")
+                    return
+                }
+                        
+                guard let encryptedSigner = signer["encryptedData"] as? Data else {
+                    print("no encryptedSigner")
+                    return
+                }
+                
+                
+                guard var seed = Crypto.decrypt(encryptedSigner) else {
+                    reset()
+                    completion((nil, nil, "Unable to decrypt your seed!"))
+                    return
+                }
+                
+                if var words = String(data: seed, encoding: .utf8) {
+                    seed = Data()
+                    
+                    if var masterKey = masterKey(words: words, coinType: coinType, passphrase: "") {
+                        words = ""
+                        if var hdkey = try? HDKey(base58: masterKey) {
+                            masterKey = ""
+                            xprvToSignWith = hdkey
+                            hdkey = try! HDKey(base58: "xpub6FETvV487Sr4VSV9Ya5em5ZAug4dtnFwgnMG7TFAfkJDHoQ1uohXft49cFenfpJHbPueMnfyxtBoAuvSu7XNL9bbLzcM1QJCPwtofqv3dqC")
+                            processWithActiveWallet()
+                        }
+                    }
+                }
+            }
+        }
+        
+        let network = UserDefaults.standard.object(forKey: "chain") as? String ?? "main"
+        if network == "main" {
+            chain = .mainnet
+            coinType = "0"
+        } else {
+            chain = .testnet
+            coinType = "1"
+        }
+        do {
+            psbtToSign = try PSBT(psbt: psbt, network: chain)
+            if psbtToSign.isComplete {
+                finalize()
+            } else {
+                getSeeds()
+            }
+        } catch {
+            completion((nil, nil, "Error converting that psbt"))
+        }
+        
+    }
+}
+

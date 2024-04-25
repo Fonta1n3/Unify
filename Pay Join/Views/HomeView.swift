@@ -39,34 +39,7 @@ struct HomeView: View {
                         return
                     }
                     
-                    
                     let privkey = Crypto.nostrPrivateKey()
-                    let pubkey = Crypto.publicKey(privKey: privkey.hex)
-                    
-//                    guard let seed = Crypto.seed() else {
-//                        showingNotSavedAlert = true
-//                        return
-//                    }
-//                    
-//                    let arr = seed.split(separator: " ")
-//                    var encryptionWords = ""
-//                    for (i, word) in arr.enumerated() {
-//                        if i < 5 {
-//                            encryptionWords += word
-//                            if i < 4 {
-//                                encryptionWords += " "
-//                            }
-//                        }
-//                    }
-//                    print("nostr pubkey: \(pubkey)")
-//                    print("encryptionWords: \(encryptionWords)")
-                    
-                    
-//                    guard let encryptedNostrWords = Crypto.encrypt(encryptionWords.data(using: .utf8)!) else {
-//                        showingNotSavedAlert = true
-//                        print("unable to encrypt nostr words")
-//                        return
-//                    }
                     
                     guard let encryptedNostrPrivateKey = Crypto.encrypt(privkey) else {
                         showingNotSavedAlert = true
@@ -78,13 +51,12 @@ struct HomeView: View {
                     print("encryptedNostrPrivateKey: \(encryptedNostrPrivateKey.hex)")
                     
                     let dict: [String:Any] = [
-                        "nostrKey": encryptedNostrPrivateKey,
+                        "nostrPrivkey": encryptedNostrPrivateKey,
                         "rpcPass": encRpcPass,
-                        //"nostrEncWords": encryptedNostrWords,
                         "rpcUser": "PayJoin"
                     ]
                                         
-                    DataManager.saveEntity(dict: dict) { saved in
+                    DataManager.saveEntity(entityName: "Credentials", dict: dict) { saved in
                         guard saved else {
                             print("creds not saved")
                             showingNotSavedAlert = true
@@ -96,6 +68,11 @@ struct HomeView: View {
                                 
                     return
                 }
+                
+//                if let _ = UserDefaults.standard.object(forKey: "peerNpub") as? String,
+//                    let nostrRelay = UserDefaults.standard.object(forKey: "nostrRelay") as? String {
+//                    connectAndSubscribe(urlString: nostrRelay)
+//                }
             })
        //}
     }
@@ -121,19 +98,75 @@ struct HomeView: View {
                 }
             }
             Text(Messages.contentViewPrompt.description)
-                
+            
         }
-        
         .alert(CoreDataError.notSaved.localizedDescription, isPresented: $showingNotSavedAlert) {
-                    Button("OK", role: .cancel) { }
-                }
+            Button("OK", role: .cancel) { }
+        }
         .alert(Messages.savedCredentials.description, isPresented: $showingSavedAlert) {
-                    Button("OK", role: .cancel) { }
-                }
+            Button("OK", role: .cancel) { }
+        }
         .onAppear {
             createDefaultCreds()
+            
+            DataManager.retrieve(entityName: "Signers") { signer in
+                guard let signer = signer else {
+                    print("no signer")
+                    let words = "smile pool offer seat betray sponsor build genius vault follow glad near"
+                    let wordData = words.data(using: .utf8)!
+                    guard let encryptedWords = Crypto.encrypt(wordData) else { return }
+                    DataManager.saveEntity(entityName: "Signers", dict: ["encryptedData": encryptedWords]) { saved in
+                        print("encryptedSigner saved: \(saved)")
+                    }
+                    return
+                }
+                
+                guard let encSigner = signer["encryptedData"] as? Data else {
+                    print("no signer")
+//                    let words = "smile pool offer seat betray sponsor build genius vault follow glad near"
+//                    let wordData = words.data(using: .utf8)!
+//                    guard let encryptedWords = Crypto.encrypt(wordData) else { return }
+//                    DataManager.saveEntity(entityName: "Signer", dict: ["encryptedData": encryptedWords]) { saved in
+//                        print("encryptedSigner saved: \(saved)")
+//                    }
+                    return
+                }
+                
+                print("encSigner: \(encSigner)")
+            }
+            
+            
         }
     }
+    
+    
+//    private func connectAndSubscribe(urlString: String) {
+//        StreamManager.shared.openWebSocket(relayUrlString: urlString)
+//        
+//        StreamManager.shared.eoseReceivedBlock = { _ in
+//            print("eos received :)")
+//        }
+//        
+//        StreamManager.shared.errorReceivedBlock = { nostrError in
+//            print("nostr received error")
+//        }
+//        
+//        StreamManager.shared.onDoneBlock = { nostrResponse in
+//            if let errDesc = nostrResponse.errorDesc {
+//                if errDesc != "" {
+//                    print("nostr response error: \(nostrResponse.errorDesc!)")
+//                } else {
+//                    if nostrResponse.response != nil {
+//                        print("nostr response: \(nostrResponse.response!)")
+//                    }
+//                }
+//            } else {
+//                if nostrResponse.response != nil {
+//                    print("nostr response: \(nostrResponse.response!)")
+//                }
+//            }
+//        }
+//    }
 }
 
 

@@ -7,7 +7,10 @@
 
 import Foundation
 
-public struct Utxo: CustomStringConvertible, Hashable {
+public struct Utxo: CustomStringConvertible, Hashable, Identifiable {
+    public let id: UUID = UUID()
+    
+    
     
     let amount: Double?
     let address: String?
@@ -34,6 +37,7 @@ public struct Utxo: CustomStringConvertible, Hashable {
 //    let utxo: String?
     
     init(_ dictionary: [String: Any]) {
+        //id = UUID()
         //id = dictionary["id"] as? UUID
         //label = dictionary["label"] as? String
         address = dictionary["address"] as? String

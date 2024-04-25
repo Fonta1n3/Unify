@@ -8,7 +8,7 @@
 import Foundation
 import NostrSDK
 
-final class StreamManager: NSObject {
+class StreamManager: NSObject {
         
     static let shared = StreamManager()
     var webSocket: URLSessionWebSocketTask?
@@ -20,7 +20,6 @@ final class StreamManager: NSObject {
     let subId = Crypto.randomKey
     var connected = false
     var timer = Timer()
-    var subscribeTo = ""
     
     
     private override init() {}
@@ -103,39 +102,11 @@ final class StreamManager: NSObject {
                 return
             }
             
-            parseValidReceivedContent(content: ev.content) { [weak self] (command, port, requestId, httpMethod, param, wallet) in
-                guard let self = self, let command = command, let port = port, let requestId = requestId else { print("Ignoring invalid event."); return }
-                self.forwardRequest(command: command, port: port, requestId: requestId, httpMethod: httpMethod, param: param, wallet: wallet)
-            }
+            // decrypt and sort here, return psbt type so we know how to handle it?
+            onDoneBlock!((ev.content, nil))
         }
     }
     
-    private func forwardRequest(command:String, port:Int, requestId: String, httpMethod: String?, param: [String:Any]?, wallet: String?) {
-//        switch port {
-//        case 8332, 18332, 18443, 38332:
-//            DataManager.retrieve { creds in
-//                guard let creds = creds else { return }
-//                let encryptionWords = creds["encryption_words"] as? String ?? ""
-//                let rpcUser = creds["btc_rpcuser"] as? String ?? ""
-//                let rpcPass = creds["btc_rpcpass"] as? String ?? ""
-//                
-//                BitcoinCoreRPC.shared.btcRPC(method: command, port: "\(port)", wallet: wallet, param: param ?? [:], requestId: requestId, rpcpass: rpcPass, rpcuser: rpcUser) { [weak self] (response, errorDesc) in
-//                    guard let self = self else { return }
-//                    let dictToSend:[String:Any] = [
-//                        "request_id": requestId,
-//                        "response": response as Any,
-//                        "error_desc": errorDesc as Any
-//                    ]
-//                    guard let jsonData = self.jsonFromDict(dict: dictToSend) else { return }
-//                    let encryptedContent = Crypto.encryptNostr(jsonData, encryptionWords)!.base64EncodedString()
-//                    self.writeEvent(content: encryptedContent)
-//                }
-//            }
-//            
-//        default:
-//            break
-//        }
-    }
     
     private func jsonFromDict(dict: [String:Any]) -> Data? {
         guard let jsonData = try? JSONSerialization.data(withJSONObject: dict, options: .prettyPrinted) else {
@@ -148,11 +119,12 @@ final class StreamManager: NSObject {
     }
     
     
-    func writeReqEvent() {
-        print("writeReqEvent")
-        //DataManager.retrieve(entityName: "Credentials") { [weak self] creds in
-            //guard let self = self, let creds = creds else { return }
-        let filter: NostrFilter = NostrFilter.filter_authors([subscribeTo])
+    func subscribe() {
+        print("subscribe")
+        if let peerNpub = UserDefaults.standard.object(forKey: "peerNpub") as? String,
+            let publicKey = PublicKey(npub: peerNpub) {
+            
+            let filter: NostrFilter = NostrFilter.filter_authors([publicKey.hex])
             let encoder = JSONEncoder()
             var req = "[\"REQ\",\"\(self.subId)\","
             guard let filter_json = try? encoder.encode(filter) else {
@@ -166,42 +138,52 @@ final class StreamManager: NSObject {
             req += "]"
             print("req: \(req)")
             self.sendMsg(string: req)
-        //}
+        }
     }
     
     
-    public func writeEvent(content: String, pubkey: PublicKey, privKey: PrivateKey) {
-        let pubkey = pubkey.hex
-        let privkey = privKey.dataRepresentation
-        print("pubkey: \(pubkey)")
-        
-        let ev = NostrEvent(content: content,
-                            pubkey: pubkey,
-                            kind: 4,
-                            tags: [])
-        
-        print("send ev: \(ev)")
-        ev.calculate_id()
-        ev.sign(privkey: privkey)
-        guard !ev.too_big else {
-            self.onDoneBlock!((nil, "Nostr event is too big to send..."))
-            #if DEBUG
-            print("event too big: \(content.count)")
-            #endif
-            return
+    public func writeEvent(content: String, recipientNpub: String) {
+        DataManager.retrieve(entityName: "Credentials") { dict in
+            guard let dict = dict, let encNostrPrivkey = dict["nostrPrivkey"] as? Data else {
+                return
+            }
+            
+            guard let decPrivkey = Crypto.decrypt(encNostrPrivkey) else { return }
+            
+            guard let keypair = Keypair(privateKey: PrivateKey(dataRepresentation: decPrivkey)!) else { return }
+            
+            let pubkey = keypair.publicKey.hex
+            let privkey = decPrivkey
+            let recipientPubkey = PublicKey(npub: recipientNpub)!
+            
+            let ev = NostrEvent(content: content,
+                                pubkey: pubkey,
+                                kind: 4,
+                                tags: [["p, \(recipientPubkey.hex)"]])
+            
+            print("send ev: \(ev)")
+            ev.calculate_id()
+            ev.sign(privkey: privkey)
+            guard !ev.too_big else {
+                self.onDoneBlock!((nil, "Nostr event is too big to send..."))
+                #if DEBUG
+                print("event too big: \(content.count)")
+                #endif
+                return
+            }
+            guard ev.validity == .ok else {
+                self.onDoneBlock!((nil, "Nostr event is invalid!"))
+                #if DEBUG
+                print("event invalid")
+                #endif
+                return
+            }
+            let encoder = JSONEncoder()
+            let event_data = try! encoder.encode(ev)
+            let event = String(decoding: event_data, as: UTF8.self)
+            let encoded = "[\"EVENT\",\(event)]"
+            self.sendMsg(string: encoded)
         }
-        guard ev.validity == .ok else {
-            self.onDoneBlock!((nil, "Nostr event is invalid!"))
-            #if DEBUG
-            print("event invalid")
-            #endif
-            return
-        }
-        let encoder = JSONEncoder()
-        let event_data = try! encoder.encode(ev)
-        let event = String(decoding: event_data, as: UTF8.self)
-        let encoded = "[\"EVENT\",\(event)]"
-        self.sendMsg(string: encoded)
     }
     
     
@@ -246,49 +228,6 @@ final class StreamManager: NSObject {
     }
     
     
-    private func parseValidReceivedContent(content: String, completion: @escaping ((command:String?, port:Int?, requestId: String?, httpMethod: String?, param: [String:Any]?, wallet: String?)) -> Void) {
-        decryptedDict(content: content) { decryptedDict in
-            guard let decryptedDict = decryptedDict else { completion((nil,nil,nil,nil,nil,nil)); return }
-            
-            #if DEBUG
-            print("decryptedDict: \(decryptedDict)")
-            #endif
-            
-            let command = decryptedDict["command"] as? String
-            let port = decryptedDict["port"] as? Int
-            let http_method = decryptedDict["http_method"] as? String
-            let request_id = decryptedDict["request_id"] as? String
-            let param = decryptedDict["param"] as? [String:Any]
-            let wallet = decryptedDict["wallet"] as? String
-            completion((command, port, request_id, http_method, param, wallet))
-        }
-    }
-    
-    
-    private func decryptedDict(content: String, completion: @escaping (([String:Any]?)) -> Void) {
-//        DataManager.retrieve { [weak self] creds in
-//            guard let self = self, let creds = creds else { return }
-//            
-//            let encryptionWords = creds["encryption_words"] as? String ?? ""
-//            guard let contentData = Data(base64Encoded: content),
-//                  let decryptedContent = Crypto.decryptNostr(contentData, encryptionWords) else {
-//                self.onDoneBlock!((nil, "Error decrypting content..."))
-//                completion((nil))
-//                return
-//            }
-//            guard let decryptedDict = try? JSONSerialization.jsonObject(with: decryptedContent, options : []) as? [String:Any] else {
-//                #if DEBUG
-//                print("converting to jsonData failing...")
-//                #endif
-//                completion((nil))
-//                return
-//            }
-//            completion((decryptedDict))
-//        }
-        
-    }
-    
-    
     private func updateCounting(seconds: Int) {
         if seconds == 30 {
             self.timer.invalidate()
@@ -297,12 +236,11 @@ final class StreamManager: NSObject {
     }
     
     
-    func openWebSocket(subscribeTo: String, relayUrlString: String) {
+    func openWebSocket(relayUrlString: String) {
         print("openWebSocket url: \(relayUrlString)")
         if let url = URL(string: relayUrlString) {
             let request = URLRequest(url: url)
             let session = URLSession(configuration: .default, delegate: self, delegateQueue: nil)
-            self.subscribeTo = subscribeTo
             self.webSocket = session.webSocketTask(with: request)
             self.opened = true
             self.webSocket?.resume()
@@ -329,9 +267,8 @@ final class StreamManager: NSObject {
 extension StreamManager: URLSessionWebSocketDelegate {
     
     func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didOpenWithProtocol protocol: String?) {
-        print("didOpenWithProtocol")
         opened = true
-        writeReqEvent()
+        subscribe()
     }
     
     
@@ -344,6 +281,7 @@ extension StreamManager: URLSessionWebSocketDelegate {
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
         if let error = error {
             print("DEBUG: didCompleteWithError called: error = \(error.localizedDescription)")
+            closeWebSocket()
             errorReceivedBlock!(error.localizedDescription)
         }
     }

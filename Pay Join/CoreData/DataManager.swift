@@ -43,10 +43,10 @@ class DataManager: NSObject, ObservableObject {
         }
     }
     
-    class func deleteAllData(completion: @escaping ((Bool)) -> Void) {
+    class func deleteAllData(entityName: String, completion: @escaping ((Bool)) -> Void) {
         DispatchQueue.main.async {
             let context = DataManager.shared.container.viewContext
-            let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: "Credentials")
+            let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: entityName)
             fetchRequest.returnsObjectsAsFaults = false
             do {
                 let stuff = try context.fetch(fetchRequest)
@@ -61,13 +61,13 @@ class DataManager: NSObject, ObservableObject {
         }
     }
     
-    class func saveEntity(dict: [String:Any], completion: @escaping ((Bool)) -> Void) {
+    class func saveEntity(entityName: String, dict: [String:Any], completion: @escaping ((Bool)) -> Void) {
         print("save")
         DispatchQueue.main.async {
 
             let context = DataManager.shared.container.viewContext
 
-            guard let entity = NSEntityDescription.entity(forEntityName: "Credentials", in: context) else {
+            guard let entity = NSEntityDescription.entity(forEntityName: entityName, in: context) else {
                 completion(false)
                 return
             }
@@ -88,10 +88,10 @@ class DataManager: NSObject, ObservableObject {
         }
     }
     
-    class func update(keyToUpdate: String, newValue: Any, completion: @escaping ((Bool)) -> Void) {
+    class func update(entityName: String, keyToUpdate: String, newValue: Any, completion: @escaping ((Bool)) -> Void) {
         DispatchQueue.main.async {
             let context = DataManager.shared.container.viewContext
-            let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: "Credentials")
+            let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: entityName)
             fetchRequest.returnsObjectsAsFaults = false
             do {
                 let credentials = try context.fetch(fetchRequest)
