@@ -22,7 +22,6 @@ public enum BTC_CLI_COMMAND {
     case listaddressgroupings
     case converttopsbt
     case getaddressinfo(param: Get_Address_Info)
-    case analyzepsbt
     case createpsbt(_ param: Create_Psbt)
     case joinpsbts(_ param: Join_Psbt)
     case getmempoolinfo
@@ -102,8 +101,6 @@ public enum BTC_CLI_COMMAND {
             return "converttopsbt"
         case .getaddressinfo:
             return "getaddressinfo"
-        case .analyzepsbt:
-            return "analyzepsbt"
         case .createpsbt:
             return "createpsbt"
         case .joinpsbts:
@@ -280,7 +277,6 @@ public enum BTC_CLI_COMMAND {
         listaddressgroupings,
         converttopsbt,
         getaddressinfo(param: .init([:])),
-        analyzepsbt,
         createpsbt(.init([:])),
         joinpsbts(.init([:])),
         getmempoolinfo,

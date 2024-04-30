@@ -44,6 +44,7 @@
 		0A56E3702B7BC9E400CEC00A /* RPCPort.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A56E36F2B7BC9E400CEC00A /* RPCPort.swift */; };
 		0A6A83E02BD95D8000A6546A /* Signer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A6A83DF2BD95D8000A6546A /* Signer.swift */; };
 		0A6A83E22BD95E8700A6546A /* SignerStruct.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A6A83E12BD95E8700A6546A /* SignerStruct.swift */; };
+		0A6A83E42BDBFD6900A6546A /* DecodedPsbt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A6A83E32BDBFD6900A6546A /* DecodedPsbt.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -96,6 +97,7 @@
 		0A56E36F2B7BC9E400CEC00A /* RPCPort.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RPCPort.swift; sourceTree = "<group>"; };
 		0A6A83DF2BD95D8000A6546A /* Signer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Signer.swift; sourceTree = "<group>"; };
 		0A6A83E12BD95E8700A6546A /* SignerStruct.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignerStruct.swift; sourceTree = "<group>"; };
+		0A6A83E32BDBFD6900A6546A /* DecodedPsbt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DecodedPsbt.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -146,6 +148,7 @@
 				0A0F184C2B954CF500EE8168 /* Messages.swift */,
 				0A0F188D2BA97CD800EE8168 /* Invoice.swift */,
 				0A6A83E12BD95E8700A6546A /* SignerStruct.swift */,
+				0A6A83E32BDBFD6900A6546A /* DecodedPsbt.swift */,
 			);
 			path = Objects;
 			sourceTree = "<group>";
@@ -309,6 +312,7 @@
 			files = (
 				0A0F18642BA012BE00EE8168 /* Bech32.swift in Sources */,
 				0A0F18AE2BD2B1C700EE8168 /* CodeScanner.swift in Sources */,
+				0A6A83E42BDBFD6900A6546A /* DecodedPsbt.swift in Sources */,
 				0A56E36E2B7BC7AD00CEC00A /* ConfigView.swift in Sources */,
 				0A56E35B2B79769B00CEC00A /* Extensions.swift in Sources */,
 				0A0F18372B7D3DC100EE8168 /* NostrResponse.swift in Sources */,

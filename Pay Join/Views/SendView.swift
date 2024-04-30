@@ -9,6 +9,7 @@ import SwiftUI
 import PhotosUI
 import NostrSDK
 import SwiftUICoreImage
+import LibWally
 
 struct SendView: View, DirectMessageEncrypting {
     @State private var uploadedInvoice: Invoice?
@@ -112,7 +113,8 @@ struct SendView: View, DirectMessageEncrypting {
             }
             
             StreamManager.shared.errorReceivedBlock = { nostrError in
-                print("nostr received error")
+                print("nostr received error: \(nostrError)")
+                
 //                showNostrError = true
 //                errorToShow = nostrError
 //                nostrConnected = false
@@ -134,15 +136,15 @@ struct SendView: View, DirectMessageEncrypting {
                 }
                 
                 print("decryptedMessage: \(decryptedMessage)")
+                
                 let invoice = Invoice(decryptedMessage)
-                guard let _ = invoice.address,
+                if let _ = invoice.address,
                       let _ = invoice.amount,
-                      let _ = invoice.recipientsNpub else {
-                    // handle a psbt
-                    return
+                      let _ = invoice.recipientsNpub {
+                    uploadedInvoice = invoice
+                    invoiceUploaded = true
                 }
-                uploadedInvoice = invoice
-                invoiceUploaded = true
+                
             }
         }
         
@@ -211,8 +213,8 @@ func handleScan(result: Result<ScanResult, ScanError>) {
     }
     
     private func getUtxos() {
-        //let p: List_Unspent = .init([:])
-        BitcoinCoreRPC.shared.btcRPC(method: .listunspent(List_Unspent([:]))) { (response, errorDesc) in
+        let p = List_Unspent([:])
+        BitcoinCoreRPC.shared.btcRPC(method: .listunspent(p)) { (response, errorDesc) in
             guard let response = response as? [[String: Any]] else {
                 // else prompt to import a psbt or a utxo
                 showNoUtxosMessage = true
@@ -235,34 +237,6 @@ func handleScan(result: Result<ScanResult, ScanError>) {
             }
         }
     }
-    
-//    private func decodePsbts() {
-//        let unfinalizedSignedPsbt = "cHNidP8BAHMCAAAAAY8nutGgJdyYGXWiBEb45Hoe9lWGbkxh/6bNiOJdCDuDAAAAAAD+////AtyVuAUAAAAAF6kUHehJ8GnSdBUOOv6ujXLrWmsJRDCHgIQeAAAAAAAXqRR3QJbbz0hnQ8IvQ0fptGn+votneofTAAAAAAEBIKgb1wUAAAAAF6kU3k4ekGHKWRNbA1rV5tR5kEVDVNCHAQQWABTHikVyU1WCjVZYB03VJg1fy2mFMCICAxWawBqg1YdUxLTYt9NJ7R7fzws2K09rVRBnI6KFj4UWRzBEAiB8Q+A6dep+Rz92vhy26lT0AjZn4PRLi8Bf9qoB/CMk0wIgP/Rj2PWZ3gEjUkTlhDRNAQ0gXwTO7t9n+V14pZ6oljUBIgYDFZrAGqDVh1TEtNi300ntHt/PCzYrT2tVEGcjooWPhRYYSFzWUDEAAIABAACAAAAAgAEAAAAAAAAAAAEAFgAURvYaK7pzgo7lhbSl/DeUan2MxRQiAgLKC8FYHmmul/HrXLUcMDCjfuRg/dhEkG8CO26cEC6vfBhIXNZQMQAAgAEAAIAAAACAAQAAAAEAAAAAAA=="
-//        
-//        let originalPsbt = "cHNidP8BAHMCAAAAAY8nutGgJdyYGXWiBEb45Hoe9lWGbkxh/6bNiOJdCDuDAAAAAAD+////AtyVuAUAAAAAF6kUHehJ8GnSdBUOOv6ujXLrWmsJRDCHgIQeAAAAAAAXqRR3QJbbz0hnQ8IvQ0fptGn+votneofTAAAAAAEBIKgb1wUAAAAAF6kU3k4ekGHKWRNbA1rV5tR5kEVDVNCHAQcXFgAUx4pFclNVgo1WWAdN1SYNX8tphTABCGsCRzBEAiB8Q+A6dep+Rz92vhy26lT0AjZn4PRLi8Bf9qoB/CMk0wIgP/Rj2PWZ3gEjUkTlhDRNAQ0gXwTO7t9n+V14pZ6oljUBIQMVmsAaoNWHVMS02LfTSe0e388LNitPa1UQZyOihY+FFgABABYAFEb2Giu6c4KO5YW0pfw3lGp9jMUUAAA="
-//        
-//        let payjoinProposal = "cHNidP8BAJwCAAAAAo8nutGgJdyYGXWiBEb45Hoe9lWGbkxh/6bNiOJdCDuDAAAAAAD+////jye60aAl3JgZdaIERvjkeh72VYZuTGH/ps2I4l0IO4MBAAAAAP7///8CJpW4BQAAAAAXqRQd6EnwadJ0FQ46/q6NcutaawlEMIcACT0AAAAAABepFHdAltvPSGdDwi9DR+m0af6+i2d6h9MAAAAAAAEBIICEHgAAAAAAF6kUyPLL+cphRyyI5GTUazV0hF2R2NWHAQcXFgAUX4BmVeWSTJIEwtUb5TlPS/ntohABCGsCRzBEAiBnu3tA3yWlT0WBClsXXS9j69Bt+waCs9JcjWtNjtv7VgIge2VYAaBeLPDB6HGFlpqOENXMldsJezF9Gs5amvDQRDQBIQJl1jz1tBt8hNx2owTm+4Du4isx0pmdKNMNIjjaMHFfrQAAAA=="
-//        
-//        let payjoinProposalFilledWithSendersInformation = "cHNidP8BAJwCAAAAAo8nutGgJdyYGXWiBEb45Hoe9lWGbkxh/6bNiOJdCDuDAAAAAAD+////jye60aAl3JgZdaIERvjkeh72VYZuTGH/ps2I4l0IO4MBAAAAAP7///8CJpW4BQAAAAAXqRQd6EnwadJ0FQ46/q6NcutaawlEMIcACT0AAAAAABepFHdAltvPSGdDwi9DR+m0af6+i2d6h9MAAAAAAQEgqBvXBQAAAAAXqRTeTh6QYcpZE1sDWtXm1HmQRUNU0IcBBBYAFMeKRXJTVYKNVlgHTdUmDV/LaYUwIgYDFZrAGqDVh1TEtNi300ntHt/PCzYrT2tVEGcjooWPhRYYSFzWUDEAAIABAACAAAAAgAEAAAAAAAAAAAEBIICEHgAAAAAAF6kUyPLL+cphRyyI5GTUazV0hF2R2NWHAQcXFgAUX4BmVeWSTJIEwtUb5TlPS/ntohABCGsCRzBEAiBnu3tA3yWlT0WBClsXXS9j69Bt+waCs9JcjWtNjtv7VgIge2VYAaBeLPDB6HGFlpqOENXMldsJezF9Gs5amvDQRDQBIQJl1jz1tBt8hNx2owTm+4Du4isx0pmdKNMNIjjaMHFfrQABABYAFEb2Giu6c4KO5YW0pfw3lGp9jMUUIgICygvBWB5prpfx61y1HDAwo37kYP3YRJBvAjtunBAur3wYSFzWUDEAAIABAACAAAAAgAEAAAABAAAAAAA="
-//        
-//        BitcoinCoreRPC.shared.btcRPC(method: .decodepsbt(param: Decode_Psbt(["psbt": unfinalizedSignedPsbt]))) { (response, errorDesc) in
-//            print("Unfinalized PSBT: \(response)")
-//            
-//            BitcoinCoreRPC.shared.btcRPC(method: .decodepsbt(param: Decode_Psbt(["psbt": originalPsbt]))) { (response, errorDesc) in
-//                print("original PSBT: \(response)")
-//                
-//                BitcoinCoreRPC.shared.btcRPC(method: .decodepsbt(param: Decode_Psbt(["psbt": payjoinProposal]))) { (response, errorDesc) in
-//                    print("payjoin proposal PSBT: \(response)")
-//                    
-//                    BitcoinCoreRPC.shared.btcRPC(method: .decodepsbt(param: Decode_Psbt(["psbt": payjoinProposalFilledWithSendersInformation]))) { (response, errorDesc) in
-//                        print("payjoin proposal with senders info PSBT: \(response)")
-//                    }
-//                }
-//                
-//                
-//            }
-//        }
-//    }
 }
 
 
@@ -428,49 +402,90 @@ struct SpendableUtxosView: View, DirectMessageEncrypting {
         options["includeWatching"] = true
         options["replaceable"] = true
         options["add_inputs"] = true
-        let dict: [String:Any] = ["inputs": inputs, "outputs": outputs, "options": options, "bip32derivs": false]
+        let dict: [String:Any] = ["inputs": inputs, "outputs": outputs, "options": options, "bip32_derivs": false]
         let p = Wallet_Create_Funded_Psbt(dict)
         BitcoinCoreRPC.shared.btcRPC(method: .walletcreatefundedpsbt(param: p)) { (response, errorDesc) in
             guard let response = response as? [String: Any], let psbt = response["psbt"] as? String else {
                 print("error from btc core")
                 return
             }
-            
             // sign the psbt :)
             Signer.sign(psbt: psbt, passphrase: nil, completion: { (signedPsbt, rawTx, errorMessage) in
-                print("signed psbt: \(psbt)")
-                print("raw tx: \(rawTx)")
-                print("errorMessage: \(errorMessage)")
-                
+//                print("signed psbt: \(psbt)")
+//                print("raw tx: \(String(describing: rawTx))")
+//                print("errorMessage: \(String(describing: errorMessage))")
                 guard let signedPsbt = signedPsbt else { return }
-                
-                DataManager.retrieve(entityName: "Credentials") { dict in
-                    guard let dict = dict, let encPrivKey = dict["nostrPrivkey"] as? Data else { return }
-                    guard let decPrivkey = Crypto.decrypt(encPrivKey) else { return }
-                    let sendersKeypair = Keypair(privateKey: PrivateKey(dataRepresentation: decPrivkey)!)!
-                    
-                    guard let recipientsNpub = invoice.recipientsNpub else {
-                        print("unable to init our keypair or recipient npub")
+                let param = Test_Mempool_Accept(["rawtxs":[rawTx]])
+                BitcoinCoreRPC.shared.btcRPC(method: .testmempoolaccept(param)) { (response, errorDesc) in
+                    guard let response = response as? [[String: Any]], let allowed = response[0]["allowed"] as? Bool, allowed else { 
                         return
                     }
                     
-                    guard let encPsbt = encryptedMessage(sendersKeypair: sendersKeypair, receiversNpub: recipientsNpub, message: signedPsbt) else {
-                        print("psbt encryption failed")
-                        return
+                    print("allowed")
+                    
+                    DataManager.retrieve(entityName: "Credentials") { dict in
+                        guard let dict = dict, let encPrivKey = dict["nostrPrivkey"] as? Data else { return }
+                        guard let decPrivkey = Crypto.decrypt(encPrivKey) else { return }
+                        let sendersKeypair = Keypair(privateKey: PrivateKey(dataRepresentation: decPrivkey)!)!
+                        
+                        guard let recipientsNpub = invoice.recipientsNpub else {
+                            print("unable to init our keypair or recipient npub")
+                            return
+                        }
+                        
+                        guard let encPsbt = encryptedMessage(sendersKeypair: sendersKeypair, receiversNpub: recipientsNpub, message: signedPsbt) else {
+                            print("psbt encryption failed")
+                            return
+                        }
+                        
+                        guard let _ = PublicKey(npub: recipientsNpub) else { return }
+                        
+                        
+                        
+                        
+                        
+                        let urlString = UserDefaults.standard.string(forKey: "nostrRelay") ?? "wss://relay.damus.io"
+                        
+                        StreamManager.shared.openWebSocket(relayUrlString: urlString)
+                        
+                        StreamManager.shared.eoseReceivedBlock = { _ in
+                            print("eos received :)")
+                            StreamManager.shared.writeEvent(content: encPsbt, recipientNpub: recipientsNpub)
+                        }
+                        
+                        StreamManager.shared.errorReceivedBlock = { nostrError in
+                            print("nostr received error: \(nostrError)")
+                            
+            //                showNostrError = true
+            //                errorToShow = nostrError
+            //                nostrConnected = false
+                        }
+                        
+                        StreamManager.shared.onDoneBlock = { nostrResponse in
+                            guard let response = nostrResponse.response as? String else {
+                                print("nostr response error: \(nostrResponse.errorDesc ?? "unknown error")")
+                                return
+                            }
+                            
+                            guard let peerNpub = UserDefaults.standard.object(forKey: "peerNpub") as? String else  {
+                                return
+                            }
+                            
+                            guard let decryptedMessage = try? decrypt(encryptedContent: response, privateKey: sendersKeypair.privateKey, publicKey: PublicKey(npub: peerNpub)!) else {
+                                print("failed decrypting")
+                                return
+                            }
+                            
+                            print("decryptedMessage: \(decryptedMessage)")
+                            
+                            if let payjoinProposal = try? PSBT(psbt: decryptedMessage, network: .testnet) {
+                                print("sender payjoinProposal: \(payjoinProposal.description)")
+                                // now we inpsect it and sign it.
+                            }
+                        }
                     }
-                    
-                    guard let recipientPubkey = PublicKey(npub: recipientsNpub) else { return }
-                    //if nostrConnected {
-                        StreamManager.shared.writeEvent(content: encPsbt, recipientNpub: recipientsNpub)
-                    //}
-                    
-                    
                 }
             })
-            
-
-            
-            
         }
     }
     
