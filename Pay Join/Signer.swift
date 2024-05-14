@@ -94,7 +94,6 @@ class Signer {
                     completion((nil, nil, errorDescription))
                 }
             }
-            
         }
         
         func attemptToSignLocally() {

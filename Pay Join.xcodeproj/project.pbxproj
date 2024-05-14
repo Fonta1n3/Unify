@@ -36,7 +36,6 @@
 		0A56E34F2B795BC600CEC00A /* Crypto.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A56E34E2B795BC600CEC00A /* Crypto.swift */; };
 		0A56E3592B79760500CEC00A /* RPCAuth.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A56E3582B79760500CEC00A /* RPCAuth.swift */; };
 		0A56E35B2B79769B00CEC00A /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A56E35A2B79769B00CEC00A /* Extensions.swift */; };
-		0A56E3662B7989EA00CEC00A /* RNCryptor in Frameworks */ = {isa = PBXBuildFile; productRef = 0A56E3652B7989EA00CEC00A /* RNCryptor */; };
 		0A56E3682B7BACA200CEC00A /* Commands.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A56E3672B7BACA200CEC00A /* Commands.swift */; };
 		0A56E36A2B7BAD5500CEC00A /* RPCParams.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A56E3692B7BAD5500CEC00A /* RPCParams.swift */; };
 		0A56E36C2B7BC74000CEC00A /* SendView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A56E36B2B7BC73F00CEC00A /* SendView.swift */; };
@@ -105,7 +104,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				0A56E3662B7989EA00CEC00A /* RNCryptor in Frameworks */,
 				0A0F18412B92BA7100EE8168 /* LibWally.xcframework in Frameworks */,
 				0A0F188C2BA3F68500EE8168 /* NostrSDK in Frameworks */,
 				0A0F18A12BAC95DE00EE8168 /* SwiftUICoreImage in Frameworks */,
@@ -247,7 +245,6 @@
 			);
 			name = "Pay Join";
 			packageProductDependencies = (
-				0A56E3652B7989EA00CEC00A /* RNCryptor */,
 				0A0F188B2BA3F68500EE8168 /* NostrSDK */,
 				0A0F18A02BAC95DE00EE8168 /* SwiftUICoreImage */,
 			);
@@ -280,7 +277,6 @@
 			);
 			mainGroup = 0A56E32B2B792C6900CEC00A;
 			packageReferences = (
-				0A56E3642B7989EA00CEC00A /* XCRemoteSwiftPackageReference "RNCryptor" */,
 				0A0F188A2BA3F68500EE8168 /* XCRemoteSwiftPackageReference "nostr-sdk-ios" */,
 				0A0F189F2BAC95DE00EE8168 /* XCRemoteSwiftPackageReference "SwiftUICoreImage" */,
 			);
@@ -572,14 +568,6 @@
 				kind = branch;
 			};
 		};
-		0A56E3642B7989EA00CEC00A /* XCRemoteSwiftPackageReference "RNCryptor" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/RNCryptor/RNCryptor.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 5.1.0;
-			};
-		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -592,11 +580,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 0A0F189F2BAC95DE00EE8168 /* XCRemoteSwiftPackageReference "SwiftUICoreImage" */;
 			productName = SwiftUICoreImage;
-		};
-		0A56E3652B7989EA00CEC00A /* RNCryptor */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 0A56E3642B7989EA00CEC00A /* XCRemoteSwiftPackageReference "RNCryptor" */;
-			productName = RNCryptor;
 		};
 /* End XCSwiftPackageProductDependency section */
 
