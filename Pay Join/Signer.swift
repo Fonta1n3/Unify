@@ -131,7 +131,7 @@ class Signer {
                             }
                         }
                         
-                        /// Once the above loops complete we remove an duplicate signing keys from the array then sign the psbt with each unique key.
+                        /// Once the above loops complete we remove any duplicate signing keys from the array then sign the psbt with each unique key.
                         if x + 1 == inputs.count {
                             var uniqueSigners = Array(Set(signableKeys))
                             if uniqueSigners.count > 0 {
@@ -164,35 +164,37 @@ class Signer {
         /// Fetch wallets on the same network
         func getSeeds() {
             seedsToSignWith.removeAll()
-            DataManager.retrieve(entityName: "Signers") { signer in
-                guard let signer = signer else {
+            DataManager.retrieveSigners() { signers in
+                guard let signers = signers else {
                     print("no signer")
                     return
                 }
-                        
-                guard let encryptedSigner = signer["encryptedData"] as? Data else {
-                    print("no encryptedSigner")
-                    return
-                }
                 
-                
-                guard var seed = Crypto.decrypt(encryptedSigner) else {
-                    reset()
-                    completion((nil, nil, "Unable to decrypt your seed!"))
-                    return
-                }
-                
-                if var words = String(data: seed, encoding: .utf8) {
-                    seed = Data()
+                for signer in signers {
                     
-                    if var masterKey = masterKey(words: words, coinType: coinType, passphrase: "") {
-                        words = ""
-                        if var hdkey = try? HDKey(base58: masterKey) {
-                            masterKey = ""
-                            xprvToSignWith = hdkey
-                            hdkey = try! HDKey(base58: "xpub6FETvV487Sr4VSV9Ya5em5ZAug4dtnFwgnMG7TFAfkJDHoQ1uohXft49cFenfpJHbPueMnfyxtBoAuvSu7XNL9bbLzcM1QJCPwtofqv3dqC")
-                            processWithActiveWallet()
+                    guard let encryptedSigner = signer["encryptedData"] as? Data else {
+                        print("no encryptedSigner")
+                        return
+                    }
+                    
+                    
+                    if var seed = Crypto.decrypt(encryptedSigner) {
+                        if var words = String(data: seed, encoding: .utf8) {
+                            seed = Data()
+                            
+                            if var masterKey = masterKey(words: words, coinType: coinType, passphrase: "") {
+                                words = ""
+                                if var hdkey = try? HDKey(base58: masterKey) {
+                                    masterKey = ""
+                                    xprvToSignWith = hdkey
+                                    hdkey = try! HDKey(base58: "xpub6FETvV487Sr4VSV9Ya5em5ZAug4dtnFwgnMG7TFAfkJDHoQ1uohXft49cFenfpJHbPueMnfyxtBoAuvSu7XNL9bbLzcM1QJCPwtofqv3dqC")
+                                    processWithActiveWallet()
+                                    break
+                                }
+                            }
                         }
+                    } else {
+                        print("decrypting signer failed")
                     }
                 }
             }

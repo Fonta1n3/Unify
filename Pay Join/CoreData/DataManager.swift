@@ -24,7 +24,6 @@ class DataManager: NSObject, ObservableObject {
     }
     
     class func retrieve(entityName: String, completion: @escaping (([String:Any]?)) -> Void) {
-        print("retrieve")
         DispatchQueue.main.async {
             let context = DataManager.shared.container.viewContext
             let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: entityName)
@@ -34,6 +33,25 @@ class DataManager: NSObject, ObservableObject {
             do {
                 if let results = try context.fetch(fetchRequest) as? [[String:Any]], results.count > 0 {
                     completion(results[0])
+                } else {
+                    completion(nil)
+                }
+            } catch {
+                completion(nil)
+            }
+        }
+    }
+    
+    class func retrieveSigners(completion: @escaping (([[String:Any]]?)) -> Void) {
+        DispatchQueue.main.async {
+            let context = DataManager.shared.container.viewContext
+            let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: "Signers")
+            fetchRequest.returnsObjectsAsFaults = false
+            fetchRequest.resultType = .dictionaryResultType
+            
+            do {
+                if let results = try context.fetch(fetchRequest) as? [[String:Any]], results.count > 0 {
+                    completion(results)
                 } else {
                     completion(nil)
                 }
@@ -62,9 +80,7 @@ class DataManager: NSObject, ObservableObject {
     }
     
     class func saveEntity(entityName: String, dict: [String:Any], completion: @escaping ((Bool)) -> Void) {
-        print("save")
         DispatchQueue.main.async {
-
             let context = DataManager.shared.container.viewContext
 
             guard let entity = NSEntityDescription.entity(forEntityName: entityName, in: context) else {

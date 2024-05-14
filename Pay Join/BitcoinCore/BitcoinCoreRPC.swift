@@ -87,9 +87,7 @@ class BitcoinCoreRPC {
             print("url = \(url)")
             print("request: \(dict)")
             #endif
-            
             let session = URLSession(configuration: .default)
-            
             let task = session.dataTask(with: request as URLRequest) { (data, response, error) in
                 guard let urlContent = data else {
                     guard let error = error else {
@@ -134,6 +132,6 @@ class BitcoinCoreRPC {
             }
             
             task.resume()
-        }        
+        }
     }
 }

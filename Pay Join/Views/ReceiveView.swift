@@ -23,15 +23,12 @@ struct ReceiveView: View, DirectMessageEncrypting {
     @State private var npub = ""
     @State private var showCopiedAlert = false
     @State private var payeeNpub = UserDefaults.standard.object(forKey: "peerNpub") as? String ?? ""
-    @State private var sendersKeypair: Keypair?
+    @State private var ourKeypair: Keypair?
     @State private var invoice = ""
     @State private var utxosToPotentiallyConsume: [Utxo] = []
     @State private var showUtxosView = false
     @State private var originalPsbt: PSBT? = nil
-    @State private var outputs: [String] = []
-    @State private var outputAddress = ""
-    @State private var outputAmount = ""
-    @State private var urlString = UserDefaults.standard.string(forKey: "nostrRelay") ?? "wss://relay.damus.io"
+    private let urlString = UserDefaults.standard.string(forKey: "nostrRelay") ?? "wss://relay.damus.io"
     
     
     var body: some View {
@@ -55,18 +52,16 @@ struct ReceiveView: View, DirectMessageEncrypting {
                 let url = "bitcoin:\($address.wrappedValue)?amount=\($amount.wrappedValue)&pj=nostr:\($npub.wrappedValue)"
                 Section("PayJoin Invoice") {
                     QRView(url: url)
-                    
                     Text(url)
                         .truncationMode(.middle)
                         .lineLimit(1)
                     HStack {
                         ShareLink("", item: url)
-                        
-                        Button("", systemImage: "doc.on.doc") {}
-                        .onTapGesture {
+                        Button("", systemImage: "doc.on.doc") {
                             #if os(macOS)
                             NSPasteboard.general.clearContents()
                             NSPasteboard.general.setString(url, forType: .string)
+                            print()
                             #elseif os(iOS)
                             UIPasteboard.general.string = url
                             #endif
@@ -91,9 +86,10 @@ struct ReceiveView: View, DirectMessageEncrypting {
                 
                 if showUtxosView, let originalPsbt = originalPsbt {
                     Section("Add Input") {
-                        if showUtxosView {
-                            UtxosSelectionView(utxos: utxosToPotentiallyConsume, originalPsbt: originalPsbt, sendersKeypair: sendersKeypair!, payeeNpub: payeeNpub)
-                        }
+                            UtxosSelectionView(utxos: utxosToPotentiallyConsume, 
+                                               originalPsbt: originalPsbt,
+                                               ourKeypair: ourKeypair!,
+                                               payeeNpub: payeeNpub)
                     }
                 }
             }
@@ -106,8 +102,8 @@ struct ReceiveView: View, DirectMessageEncrypting {
                 
                 guard let decPrivkey = Crypto.decrypt(encPrivKey) else { return }
                 
-                sendersKeypair = Keypair(privateKey: PrivateKey(dataRepresentation: decPrivkey)!)!
-                npub = sendersKeypair!.publicKey.npub
+                ourKeypair = Keypair(privateKey: PrivateKey(dataRepresentation: decPrivkey)!)!
+                npub = ourKeypair!.publicKey.npub
             }
         }
         .alert("Invoice copied ✓", isPresented: $showCopiedAlert) {
@@ -124,14 +120,10 @@ struct ReceiveView: View, DirectMessageEncrypting {
         StreamManager.shared.openWebSocket(relayUrlString: urlString)
         
         StreamManager.shared.eoseReceivedBlock = { _ in
-            print("eos received :)")
-            //nostrConnected = true
-            guard let encInvoice = encryptedMessage(sendersKeypair: sendersKeypair!, receiversNpub: payeeNpub, message: self.invoice) else {
+            guard let encInvoice = encryptedMessage(ourKeypair: ourKeypair!, receiversNpub: payeeNpub, message: self.invoice) else {
                 print("failed encrytping invoice")
                 return
             }
-            
-            
             StreamManager.shared.writeEvent(content: encInvoice, recipientNpub: payeeNpub)
         }
         
@@ -145,12 +137,11 @@ struct ReceiveView: View, DirectMessageEncrypting {
                 return
             }
             
-            guard let decryptedMessage = try? decrypt(encryptedContent: response, privateKey: sendersKeypair!.privateKey, publicKey: payeePubkey) else {
+            guard let decryptedMessage = try? decrypt(encryptedContent: response, privateKey: ourKeypair!.privateKey, publicKey: payeePubkey) else {
                 print("failed decrypting")
                 return
             }
             
-            print("decryptedMessage: \(decryptedMessage)")
             // First check if it satisfies our current invoice...
             guard let psbt = try? PSBT(psbt: decryptedMessage, network: .testnet) else { return }
             let invoiceAddress = try! Address(string: address)
@@ -161,13 +152,17 @@ struct ReceiveView: View, DirectMessageEncrypting {
                 }
             }
             var allOutputsSegwit = false
+            var ourInvoiceGetsPaid = false
             for output in psbt.outputs {
                 if output.txOutput.scriptPubKey.type == .payToWitnessPubKeyHash {
                     allOutputsSegwit = true
                 }
+                if output.txOutput.address! == invoiceAddress.description {
+                    ourInvoiceGetsPaid = true
+                }
             }
             
-            guard allOutputsSegwit, allInputsSegwit else {
+            guard allOutputsSegwit, allInputsSegwit, ourInvoiceGetsPaid else {
                 print("something not segwit...")
                 return
             }
@@ -192,8 +187,6 @@ struct ReceiveView: View, DirectMessageEncrypting {
                     if allowed {
                         originalPsbt = psbt
                         showUtxosView = true
-                    } else {
-                        print("not allowed")
                     }
                 }
             }
@@ -201,24 +194,21 @@ struct ReceiveView: View, DirectMessageEncrypting {
 
             // Receiver's original PSBT checklist
             //
-            //                  The receiver needs to do some check on the original PSBT before proceeding:
-            //
+            // The receiver needs to do some check on the original PSBT before proceeding:
             
+            //  If the sender included inputs in the original PSBT owned by the receiver, the receiver must either return error original-psbt-rejected or make sure they do not sign those inputs in the payjoin proposal.
             
-            
-            //                  If the sender included inputs in the original PSBT owned by the receiver, the receiver must either return error original-psbt-rejected or make sure they do not sign those inputs in the payjoin proposal.
-            
-            
-            //                  This prevent reentrant payjoin, where a sender attempts to use payjoin transaction as a new original transaction for a new payjoin.
-            //                  *: Interactive receivers are not required to validate the original PSBT because they are not exposed to probing attacks.
+            // This prevent reentrant payjoin, where a sender attempts to use payjoin transaction as a new original transaction for a new payjoin.
+            // *: Interactive receivers are not required to validate the original PSBT because they are not exposed to probing attacks.
             
             BitcoinCoreRPC.shared.btcRPC(method: .listunspent(List_Unspent([:]))) { (response, errorDesc) in
                 guard let utxos = response as? [[String: Any]] else { return }
-                
                 for utxo in utxos {
                     let utxo = Utxo(utxo)
-                    if let confs = utxo.confs, confs > 0, let solvable = utxo.solvable, solvable {
-                        if let address = utxo.address, ((try? Address(string: address).scriptPubKey.type == .payToWitnessPubKeyHash)!) {
+                    if let confs = utxo.confs, confs > 0, 
+                        let solvable = utxo.solvable, solvable {
+                        if let address = utxo.address,
+                            ((try? Address(string: address).scriptPubKey.type == .payToWitnessPubKeyHash)!) {
                             utxosToPotentiallyConsume.append(utxo)
                         }
                     }
@@ -229,20 +219,24 @@ struct ReceiveView: View, DirectMessageEncrypting {
     
     
     private func fetchAddress() {
-        let p: Get_New_Address = .init(["address_type": "bech32"])
+        let p = Get_New_Address(["address_type": "bech32"])
         BitcoinCoreRPC.shared.btcRPC(method: .getnewaddress(param: p)) { (response, errorDesc) in
             guard let address = response as? String else { return }
-            
             self.address = address
         }
     }
     
-    private func encryptedMessage(sendersKeypair: Keypair, receiversNpub: String, message: String) -> String? {
+    
+    private func encryptedMessage(ourKeypair: Keypair, receiversNpub: String, message: String) -> String? {
         guard let receiversPubKey = PublicKey(npub: receiversNpub) else {
             return nil
         }
         
-        guard let encryptedMessage = try? encrypt(content: message, privateKey: sendersKeypair.privateKey, publicKey: receiversPubKey) else { return nil }
+        guard let encryptedMessage = try? encrypt(content: message,
+                                                  privateKey: ourKeypair.privateKey,
+                                                  publicKey: receiversPubKey) else {
+            return nil
+        }
         
         return encryptedMessage
     }
@@ -250,36 +244,15 @@ struct ReceiveView: View, DirectMessageEncrypting {
 }
 
 
-struct AddOutputView: View {
-    @State private var address = ""
-    @State private var amount = ""
-    
-    var body: some View {
-        TextField("Address", text: $address)
-        TextField("Amount", text: $amount)
-        Button("Create Payjoin Proposal") {
-            
-        }
-    }
-}
-
-
-struct UtxosSelectionView: View, DirectMessageEncrypting {
+struct UtxosSelectionView: View {
     @State private var additionalOutputAddress = ""
     @State private var additionalOutputAmount = ""
     @State var selectedUtxo: Utxo? = nil
     
     let utxos: [Utxo]
     let originalPsbt: PSBT
-    let sendersKeypair: Keypair
+    let ourKeypair: Keypair
     let payeeNpub: String
-    
-    init(utxos: [Utxo], originalPsbt: PSBT, sendersKeypair: Keypair, payeeNpub: String) {
-        self.utxos = utxos
-        self.originalPsbt = originalPsbt
-        self.payeeNpub = payeeNpub
-        self.sendersKeypair = sendersKeypair
-    }
     
     var body: some View {
         List {
@@ -289,74 +262,12 @@ struct UtxosSelectionView: View, DirectMessageEncrypting {
         }
         .frame(minHeight: CGFloat(utxos.count) * 40)
         
-        Section("Add Output") {
-            TextField("Address", text: $additionalOutputAddress)
-            TextField("Amount", text: $additionalOutputAmount)
+        if let selectedUtxo = selectedUtxo {
+            AddOutputView(utxo: selectedUtxo, 
+                          originalPsbt: originalPsbt,
+                          ourKeypair: ourKeypair,
+                          payeeNpub: payeeNpub)
         }
-        
-        Button("Create Payjoin Proposal") {
-            print("add output: \(additionalOutputAddress + ":" + additionalOutputAmount)")
-            let decodePsbtParam = Decode_Psbt(["psbt": originalPsbt.description])
-            BitcoinCoreRPC.shared.btcRPC(method: .decodepsbt(param: decodePsbtParam)) { (response, errorDesc) in
-                guard let response = response as? [String: Any] else { return }
-                let decodedPsbt = DecodedPsbt(response)
-                var inputsForParams: [[String:Any]] = []
-                // add senders inputs
-                for input in decodedPsbt.txInputs {
-                    var inputDict: [String: Any] = [:]
-                    inputDict["txid"] = input["txid"] as! String
-                    inputDict["vout"] = input["vout"] as! Int
-                    inputsForParams.append(inputDict)
-                }
-                // add our inputs
-                if let selectedUtxo = selectedUtxo {
-                    var ourInputDict: [String: Any] = [:]
-                    ourInputDict["txid"] = selectedUtxo.txid
-                    ourInputDict["vout"] = selectedUtxo.vout
-                }
-                // add the outputs
-                let ourOutput = [additionalOutputAddress: additionalOutputAmount]
-                var outputsForParams: [[String: Any]] = []
-                outputsForParams.append(ourOutput)
-                
-                for output in originalPsbt.outputs {
-                    var outputDict: [String: Any] = [:]
-                    outputDict[output.txOutput.address!] = "\(Double(output.txOutput.amount) / 100000000.0)"
-                    outputsForParams.append(outputDict)
-                }
-                
-                let options = ["add_inputs": true]
-                let p = Wallet_Create_Funded_Psbt(["inputs": inputsForParams, "outputs": outputsForParams, "options": options, "bip32_derivs": false])
-                BitcoinCoreRPC.shared.btcRPC(method: .walletcreatefundedpsbt(param: p)) { (response, errorDesc) in
-                    guard let response = response as? [String: Any], let payjoinProposalPsbt = response["psbt"] as? String else { return }
-                    
-                    Signer.sign(psbt: payjoinProposalPsbt, passphrase: nil) { (psbt, rawTx, errorMessage) in
-                        guard let signedPayjoinProposal = psbt else {
-                            print("no signed psbt")
-                            return
-                        }
-                        
-                        // send encrypted signedPayjoinProposal to the sender
-                        guard let encPsbt = encryptedMessage(sendersKeypair: sendersKeypair, receiversNpub: payeeNpub, message: signedPayjoinProposal) else {
-                            print("failed encrytping payjoin proposal")
-                            return
-                        }
-                        
-                        StreamManager.shared.writeEvent(content: encPsbt, recipientNpub: payeeNpub)
-                    }
-                }
-            }
-        }
-    }
-    
-    private func encryptedMessage(sendersKeypair: Keypair, receiversNpub: String, message: String) -> String? {
-        guard let receiversPubKey = PublicKey(npub: receiversNpub) else {
-            return nil
-        }
-        
-        guard let encryptedMessage = try? encrypt(content: message, privateKey: sendersKeypair.privateKey, publicKey: receiversPubKey) else { return nil }
-        
-        return encryptedMessage
     }
 }
 
@@ -364,7 +275,7 @@ struct UtxosSelectionView: View, DirectMessageEncrypting {
 struct UtxoSelectionCell: View {
     let utxo: Utxo
     @Binding var selectedUtxo: Utxo?
-
+    
     var body: some View {
         HStack {
             Text(utxo.address! + ":" + utxo.amount!.description)
@@ -374,20 +285,115 @@ struct UtxoSelectionCell: View {
                 Image(systemName: "checkmark")
                     .foregroundColor(.accentColor)
             }
-        }   .onTapGesture {
+        }
+        .onTapGesture {
             self.selectedUtxo = self.utxo
         }
+    }
+}
+
+struct AddOutputView: View {
+    @State private var additionalOutputAddress = ""
+    @State private var additionalOutputAmount = ""
+    
+    let utxo: Utxo
+    let originalPsbt: PSBT
+    let ourKeypair: Keypair
+    let payeeNpub: String
+    
+    var body: some View {
+        Section("Add Output") {
+            TextField("Address", text: $additionalOutputAddress)
+            TextField("Amount", text: $additionalOutputAmount)
+        }
+        
+        if additionalOutputAmount != "", additionalOutputAmount != "" {
+            CreateProposalView(utxo: utxo, 
+                               originalPsbt: originalPsbt,
+                               ourKeypair: ourKeypair,
+                               payeeNpub: payeeNpub,
+                               additionalOutputAddress: additionalOutputAddress,
+                               additionalOutputAmount: additionalOutputAmount)
+        }
+    }
+}
+
+
+struct CreateProposalView: View, DirectMessageEncrypting {
+    let utxo: Utxo
+    let originalPsbt: PSBT
+    let ourKeypair: Keypair
+    let payeeNpub: String
+    let additionalOutputAddress: String
+    let additionalOutputAmount: String
+    
+    var body: some View {
+        Button("Create Payjoin Proposal") {
+            var inputsForParams: [[String:Any]] = []
+            // add our input
+            var ourInputDict: [String: Any] = [:]
+            ourInputDict["txid"] = utxo.txid
+            ourInputDict["vout"] = utxo.vout
+            inputsForParams.append(ourInputDict)
+            // add the outputs
+            let ourOutput = [additionalOutputAddress: additionalOutputAmount]
+            var outputsForParams: [[String: Any]] = []
+            outputsForParams.append(ourOutput)
+            let options = ["add_inputs": true]
+            let p = Wallet_Create_Funded_Psbt(["inputs": inputsForParams, "outputs": outputsForParams, "options": options, "bip32derivs": false])
+            
+            BitcoinCoreRPC.shared.btcRPC(method: .walletcreatefundedpsbt(param: p)) { (response, errorDesc) in
+                guard let response = response as? [String: Any], let receiversPsbt = response["psbt"] as? String else {
+                    print("failed creating psbt")
+                    return
+                }
+                
+                let param = Join_Psbt(["txs": [receiversPsbt, originalPsbt.description]])
+                
+                BitcoinCoreRPC.shared.btcRPC(method: .joinpsbts(param)) { (response, errorMessage) in
+                    guard let payjoinProposalUnsigned = response as? String else {
+                        print("There was an error joining the psbts: \(errorMessage ?? "unknown error")")
+                        return
+                    }
+                    Signer.sign(psbt: payjoinProposalUnsigned, passphrase: nil) { (signedPayjoinProposal, rawTx, errorMessage) in
+                        guard let signedPayjoinProposal = signedPayjoinProposal else {
+                            print("no signed psbt")
+                            return
+                        }
+                        guard let encPsbtProposal = encryptedMessage(ourKeypair: ourKeypair, 
+                                                                     receiversNpub: payeeNpub,
+                                                                     message: signedPayjoinProposal) else {
+                            print("failed encrypting payjoin proposal")
+                            return
+                        }
+                        StreamManager.shared.writeEvent(content: encPsbtProposal, recipientNpub: payeeNpub)
+                    }
+                }
+            }
+        }
+    }
+    
+    private func encryptedMessage(ourKeypair: Keypair, receiversNpub: String, message: String) -> String? {
+        guard let receiversPubKey = PublicKey(npub: receiversNpub) else {
+            return nil
+        }
+        
+        guard let encryptedMessage = try? encrypt(content: message,
+                                                  privateKey: ourKeypair.privateKey,
+                                                  publicKey: receiversPubKey) else {
+            return nil
+        }
+        
+        return encryptedMessage
     }
 }
 
 
 struct QRView: View {
     @State private var showCopiedAlert = false
+    
     let url: String
     
-    init(url: String) {
-        self.url = url
-    }
     #if os(iOS)
     var body: some View {
         Image(uiImage: generateQRCode(from: url))

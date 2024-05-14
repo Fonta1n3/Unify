@@ -90,7 +90,7 @@ class StreamManager: NSObject {
     
     
     private func parseEventDict(arr: NSArray) {
-        if let dict = arr[2] as? [String:Any], let created_at = dict["created_at"] as? Int {
+        if let dict = arr[2] as? [String:Any], let created_at = dict["created_at"] as? Int, let _ = dict["id"] as? String {
             let now = NSDate().timeIntervalSince1970
             let diff = (now - TimeInterval(created_at))
             guard diff < 5.0 else { print("diff > 5, ignoring."); return }
@@ -101,10 +101,9 @@ class StreamManager: NSObject {
                 #endif
                 return
             }
-            
             // decrypt and sort here, return psbt type so we know how to handle it?
             onDoneBlock!((ev.content, nil))
-        }
+        }        
     }
     
     

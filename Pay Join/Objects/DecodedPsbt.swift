@@ -212,8 +212,10 @@ import Foundation
 public struct DecodedPsbt: CustomStringConvertible {
     let inputs: [[String: Any]]
     let outputs: [[String: Any]]
-    let tx: [String: Any]
+    let tx: [String: Any]// the unsigned network serialized tx
     let txInputs: [[String: Any]]
+    let txLocktime: Int
+    let psbtVersion: Int
    
     
     init(_ dictionary: [String: Any]) {
@@ -221,12 +223,110 @@ public struct DecodedPsbt: CustomStringConvertible {
         outputs = dictionary["outputs"] as? [[String: Any]] ?? []
         tx = dictionary["tx"] as? [String: Any] ?? [:]
         txInputs = tx["vin"] as? [[String: Any]] ?? [[:]]
+        psbtVersion = dictionary["psbt_version"] as! Int
+        txLocktime = tx["locktime"] as! Int
     }
     
     public var description: String {
         return ""
     }
 }
+
+//public struct DecodedPsbtInput: CustomStringConvertible {
+//    // non_witness_utxo: the outputs in the non witness utxo are the inputs of our psbt. (can include segwit)
+//    
+//    // witness_utxo: the "output" the current input is spending from if its segwit
+//    
+//    let nonWitnessUtxo: [String: Any]
+//    let witnessUtxo: [String: Any]
+//    
+//    /*
+//     {
+//"bip32_derivs" =                 (
+//                     {
+//     "master_fingerprint" = e1dd9d1c;
+//     path = "m/84'/1'/0'/1/55";
+//     pubkey = 030ac5fa6ee00baa2443df3893e289b4320f5492185d9c97fdd4ea5a8c364fbe08;
+// }
+//);
+//"non_witness_utxo" =                 {
+// hash = 585466306012ccf1408e952e704e0b81349d022f92d24ac3a91af5496c261ada;
+// locktime = 0;
+// size = 195;
+// txid = 585466306012ccf1408e952e704e0b81349d022f92d24ac3a91af5496c261ada;
+// version = 2;
+// vin =                     (
+//                             {
+//         scriptSig =                             {
+//             asm = "";
+//             hex = "";
+//         };
+//         sequence = 4294967293;
+//         txid = 65f97c58a08c8e36cf09d11fe970af1d3c73fd3e5d4515015ee415ab539dc145;
+//         vout = 1;
+//     },
+//                             {
+//         scriptSig =                             {
+//             asm = "";
+//             hex = "";
+//         };
+//         sequence = 4294967293;
+//         txid = fe5c5587534a27592d3deaf213b3eca7e54ed7811a22d002fcab577b867d476b;
+//         vout = 1;
+//     },
+//                             {
+//         scriptSig =                             {
+//             asm = "";
+//             hex = "";
+//         };
+//         sequence = 4294967293;
+//         txid = 91b3af0f82b7666258e48beb9f9336e016a21d2401169157ca71152efe97ec18;
+//         vout = 1;
+//     }
+// );
+// vout =                     (
+//                             {
+//         n = 0;
+//         scriptPubKey =                             {
+//             address = tb1qdg32849nweslxr2e70yp6umtwuy4fwulynmrzu;
+//             asm = "0 6a22a3d4b37661f30d59f3c81d736b770954bb9f";
+//             desc = "addr(tb1qdg32849nweslxr2e70yp6umtwuy4fwulynmrzu)#u0yre8ld";
+//             hex = 00146a22a3d4b37661f30d59f3c81d736b770954bb9f;
+//             type = "witness_v0_keyhash";
+//         };
+//         value = "0.003";
+//     },
+//                             {
+//         n = 1;
+//         scriptPubKey =                             {
+//             address = tb1qwhwxwkqdz02tfflqcw92anxeg06puey2l7ft58;
+//             asm = "0 75dc67580d13d4b4a7e0c38aaeccd943f41e648a";
+//             desc = "addr(tb1qwhwxwkqdz02tfflqcw92anxeg06puey2l7ft58)#fg5unc9d";
+//             hex = 001475dc67580d13d4b4a7e0c38aaeccd943f41e648a;
+//             type = "witness_v0_keyhash";
+//         };
+//         value = "0.00597059";
+//     }
+// );
+// vsize = 195;
+// weight = 780;
+//};
+//"partial_signatures" =                 {
+// 030ac5fa6ee00baa2443df3893e289b4320f5492185d9c97fdd4ea5a8c364fbe08 = 304402205d43f0ba32a6d0262264892be8260c07731004238cea332a03da70eacb23e58e02205f2b507ff05162f773caa07bde4f033b35cb41414590513f8fc668444588b51001;
+//};
+//"witness_utxo" =                 {
+// amount = "0.00597059";
+// scriptPubKey =                     {
+//     address = tb1qwhwxwkqdz02tfflqcw92anxeg06puey2l7ft58;
+//     asm = "0 75dc67580d13d4b4a7e0c38aaeccd943f41e648a";
+//     desc = "addr(tb1qwhwxwkqdz02tfflqcw92anxeg06puey2l7ft58)#fg5unc9d";
+//     hex = 001475dc67580d13d4b4a7e0c38aaeccd943f41e648a;
+//     type = "witness_v0_keyhash";
+// };
+//};
+//}
+//     */
+//}
 
 
 //public struct DecodedPsbtInputs: CustomStringConvertible {

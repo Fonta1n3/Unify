@@ -17,3 +17,10 @@ public extension Data {
     }
 }
 
+public extension String {
+    var noWhiteSpace: String {
+        let components = self.components(separatedBy: .whitespacesAndNewlines)
+        return components.filter { !$0.isEmpty }.joined(separator: " ")
+    }
+}
+
