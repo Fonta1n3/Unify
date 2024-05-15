@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import RNCryptor
 import secp256k1
 import CryptoKit
 import LibWally
@@ -57,13 +56,13 @@ class Crypto {
         return words
     }
     
-    static func encryptNostr(_ content: Data, _ password: String) -> Data? {
-        return RNCryptor.encrypt(data: content, withPassword: password.replacingOccurrences(of: " ", with: ""))
-    }
-
-    static func decryptNostr(_ content: Data, _ password: String) -> Data? {
-        return try? RNCryptor.decrypt(data: content, withPassword: password.replacingOccurrences(of: " ", with: ""))
-    }
+//    static func encryptNostr(_ content: Data, _ password: String) -> Data? {
+//        return RNCryptor.encrypt(data: content, withPassword: password.replacingOccurrences(of: " ", with: ""))
+//    }
+//
+//    static func decryptNostr(_ content: Data, _ password: String) -> Data? {
+//        return try? RNCryptor.decrypt(data: content, withPassword: password.replacingOccurrences(of: " ", with: ""))
+//    }
     
     static var randomKey: String {
         let privateKey = try! secp256k1.KeyAgreement.PrivateKey()

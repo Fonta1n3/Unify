@@ -34,19 +34,24 @@ struct ReceiveView: View, DirectMessageEncrypting {
     var body: some View {
         Spacer()
         Label("Receive", systemImage: "qrcode")
-        List() {
-            Section("Amount") {
+        Form() {
+            Section("Create Invoice") {
                 TextField("Amount in btc", text: $amount)
                 #if os(iOS)
                     .keyboardType(.decimalPad)
                 #endif
-            }
-            Section("Recipient Address") {
+                
                 TextField("Recipient address", text: $address)
                 #if os(iOS)
                     .keyboardType(.default)
                 #endif
             }
+//            Section("Amount") {
+//                
+//            }
+//            Section("Recipient Address") {
+//                
+//            }
             
             if let amountDouble = Double(amount), amountDouble > 0 && address != "" {
                 let url = "bitcoin:\($address.wrappedValue)?amount=\($amount.wrappedValue)&pj=nostr:\($npub.wrappedValue)"
@@ -56,8 +61,8 @@ struct ReceiveView: View, DirectMessageEncrypting {
                         .truncationMode(.middle)
                         .lineLimit(1)
                     HStack {
-                        ShareLink("", item: url)
-                        Button("", systemImage: "doc.on.doc") {
+                        ShareLink("Export", item: url)
+                        Button("Copy", systemImage: "doc.on.doc") {
                             #if os(macOS)
                             NSPasteboard.general.clearContents()
                             NSPasteboard.general.setString(url, forType: .string)
@@ -78,12 +83,10 @@ struct ReceiveView: View, DirectMessageEncrypting {
                     Button("Request") {
                         if let _ = PublicKey(npub: payeeNpub) {
                             connectToNostr()
-                        
                         }
                     }
                     .disabled(PublicKey(npub: payeeNpub) == nil)
                 }
-                
                 if showUtxosView, let originalPsbt = originalPsbt {
                     Section("Add Input") {
                             UtxosSelectionView(utxos: utxosToPotentiallyConsume, 
@@ -94,8 +97,13 @@ struct ReceiveView: View, DirectMessageEncrypting {
                 }
             }
         }
+        .buttonStyle(.bordered)
+        .formStyle(.grouped)
+        .multilineTextAlignment(.leading)
+        .textFieldStyle(.roundedBorder)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(EdgeInsets(top: 12, leading: 12, bottom: 12, trailing: 12))
         .onAppear {
-            print("receive view")
             fetchAddress()
             DataManager.retrieve(entityName: "Credentials") { dict in
                 guard let dict = dict, let encPrivKey = dict["nostrPrivkey"] as? Data else { return }
@@ -231,13 +239,11 @@ struct ReceiveView: View, DirectMessageEncrypting {
         guard let receiversPubKey = PublicKey(npub: receiversNpub) else {
             return nil
         }
-        
         guard let encryptedMessage = try? encrypt(content: message,
                                                   privateKey: ourKeypair.privateKey,
                                                   publicKey: receiversPubKey) else {
             return nil
         }
-        
         return encryptedMessage
     }
     
@@ -377,13 +383,11 @@ struct CreateProposalView: View, DirectMessageEncrypting {
         guard let receiversPubKey = PublicKey(npub: receiversNpub) else {
             return nil
         }
-        
         guard let encryptedMessage = try? encrypt(content: message,
                                                   privateKey: ourKeypair.privateKey,
                                                   publicKey: receiversPubKey) else {
             return nil
         }
-        
         return encryptedMessage
     }
 }
@@ -405,22 +409,21 @@ struct QRView: View {
     
     var body: some View {
         let image = generateQRCode(from: url)
-        
         Image(nsImage: image)
             .resizable()
             .scaledToFit()
             .frame(width: 200, height: 200)
         
         HStack {
-            ShareLink(item: Image(nsImage: image), preview: SharePreview("", image: image))
-            
-            Button("", systemImage: "doc.on.doc") {
+            ShareLink(item: Image(nsImage: image), preview: SharePreview("", image: image)) {
+                Label("Export", systemImage:  "square.and.arrow.up")
+            }
+            Button("Copy", systemImage: "doc.on.doc") {
                 NSPasteboard.general.clearContents()
                 NSPasteboard.general.writeObjects([image])
                 showCopiedAlert = true
             }
         }
-        
         .alert("Invoice copied ✓", isPresented: $showCopiedAlert) {
             Button("OK", role: .cancel) { }
         }

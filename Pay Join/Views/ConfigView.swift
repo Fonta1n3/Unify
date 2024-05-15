@@ -107,8 +107,7 @@ struct ConfigView: View {
         guard let encryptedRpcPass = Crypto.encrypt(rpcPassData) else { return }
         DataManager.update(entityName: "Credentials", keyToUpdate: "rpcPass", newValue: encryptedRpcPass) { updated in
             if updated {
-                rpcPassword = rpcPass
-                setValues()
+                self.rpcPassword = rpcPass
             }
         }
     }
@@ -129,16 +128,14 @@ struct ConfigView: View {
         Spacer()
         Label("Configuration", systemImage: "gear")
         Form() {
-            Section("RPC User") {
-                TextField("", text: $rpcUser)
+            Section("RPC Credentials") {
+                TextField("User", text: $rpcUser)
                     .onSubmit {
                         updateRpcUser(rpcUser: rpcUser)
                         setValues()
                     }
-            }
-            Section("RPC Password") {
                 HStack {
-                    SecureField("", text: $rpcPassword)
+                    SecureField("Password", text: $rpcPassword)
                         .onSubmit {
                             updateRpcPass(rpcPass: rpcPassword)
                             setValues()
@@ -148,13 +145,8 @@ struct ConfigView: View {
                         updateRpcPass(rpcPass: rpcPassword)
                     }
                 }
-                
-            }
-            Section("RPC Authentication") {
-                CopyView(item: rpcAuth)
-            }
-            Section("RPC Port") {
-                TextField("", text: $rpcPort)
+                CopyView(item: rpcAuth, title: "Auth")
+                TextField("Port", text: $rpcPort)
                     .onSubmit {
                         UserDefaults.standard.setValue(rpcPort, forKey: "rpcPort")
                         setValues()
@@ -171,76 +163,65 @@ struct ConfigView: View {
                             Text(wallet)
                                 .bold()
                         }
-                        
                     } else {
                         Text(wallet)
                             .onTapGesture {
-                                print("tapped \(wallet)")
                                 UserDefaults.standard.setValue(wallet, forKey: "walletName")
                                 rpcWallet = wallet
                             }
                     }
                 }
             }
-            Section("Nostr Relay") {
-                TextField("", text: $nostrRelay)
+            Section("Nostr Credentials") {
+                TextField("Relay", text: $nostrRelay)
                     .onSubmit {
                         nostrRelay = nostrRelay
                         UserDefaults.standard.setValue(nostrRelay, forKey: "nostrRelay")
                     }
-                
+                HStack {
+                    SecureField("Private key", text: $nostrPrivkey)
+                        .onSubmit {
+                            updateNostrPrivkey(nostrPrivkey: nostrPrivkey)
+                        }
+                    Button("", systemImage: "arrow.clockwise") {
+                        updateNostrPrivkey(nostrPrivkey: Crypto.privateKey)
+                    }
+                }
+                let privKey = PrivateKey(hex: nostrPrivkey)
+                if let privKey = privKey {
+                    let keypair = Keypair(privateKey: privKey)
+                    let npub = keypair!.publicKey.npub
+                    CopyView(item: npub, title: "npub")
+                }
+                TextField("Subscribe", text: $peerNpub)
+                    .onSubmit {
+                        UserDefaults.standard.setValue(peerNpub, forKey: "peerNpub")
+                        setValues()
+                    }
+                    .autocorrectionDisabled()
             }
-            if nostrPrivkey != "" {
-                Section("Nostr privkey") {
-                    HStack {
-                        SecureField("", text: $nostrPrivkey)
-                            .onSubmit {
-                                updateNostrPrivkey(nostrPrivkey: nostrPrivkey)
-                            }
-                        Button("", systemImage: "arrow.clockwise") {
-                            updateNostrPrivkey(nostrPrivkey: Crypto.privateKey)
+            Section("Signer") {
+                SecureField("Encrypted BIP 39 mnemonic", text: $encSigner)
+                    .onSubmit {
+                        let words = encSigner.components(separatedBy: " ")
+                        var wordsNoSpaces: [String] = []
+                        for word in words {
+                            wordsNoSpaces.append(word.noWhiteSpace)
                         }
-                    }
-                }
-                Section("Nostr npub") {
-                    let privKey = PrivateKey(hex: nostrPrivkey)
-                    if let privKey = privKey {
-                        let keypair = Keypair(privateKey: privKey)
-                        let npub = keypair!.publicKey.npub
-                        CopyView(item: npub)
-                    }
-                }
-                Section("Subscribe to") {
-                    TextField("", text: $peerNpub)
-                        .onSubmit {
-                            UserDefaults.standard.setValue(peerNpub, forKey: "peerNpub")
-                            setValues()
+                        guard let _ = try? BIP39Mnemonic(words: wordsNoSpaces) else {
+                            print("invalid signer")
+                            return
                         }
-                        .autocorrectionDisabled()
-                }
-                Section("PSBT Signer") {
-                    SecureField("Encrypted BIP 39 mnemonic", text: $encSigner)
-                        .onSubmit {
-                            let words = encSigner.components(separatedBy: " ")
-                            var wordsNoSpaces: [String] = []
-                            for word in words {
-                                wordsNoSpaces.append(word.noWhiteSpace)
-                            }
-                            guard let _ = try? BIP39Mnemonic(words: wordsNoSpaces) else {
-                                print("invalid signer")
+                        guard let encSeed = Crypto.encrypt(encSigner.data(using: .utf8)!) else { return }
+                        let dict: [String: Any] = ["encryptedData": encSeed]
+                        DataManager.saveEntity(entityName: "Signers", dict: dict) { saved in
+                            guard saved else {
+                                print("not saved")
                                 return
                             }
-                            guard let encSeed = Crypto.encrypt(encSigner.data(using: .utf8)!) else { return }
-                            let dict: [String: Any] = ["encryptedData": encSeed]
-                            DataManager.saveEntity(entityName: "Signers", dict: dict) { saved in
-                                guard saved else {
-                                    print("not saved")
-                                    return
-                                }
-                                self.encSigner = encSeed.hex
-                            }
+                            self.encSigner = encSeed.hex
                         }
-                }
+                    }
             }
         }
         .formStyle(.grouped)
@@ -266,22 +247,22 @@ struct ConfigView: View {
 
 struct CopyView: View {
     @State private var copied = false
-    
     let item: String
+    let title: String
     
     var body: some View {
         HStack {
-            Text(item)
+            LabeledContent(title, value: item)
                 .truncationMode(.middle)
                 .lineLimit(1)
-            ShareLink(" ", item: item)
-            Button(" ", systemImage: "doc.on.doc") {
-#if os(macOS)
+            ShareLink("Export", item: item)
+            Button("Copy", systemImage: "doc.on.doc") {
+                #if os(macOS)
                 NSPasteboard.general.clearContents()
                 NSPasteboard.general.setString(item, forType: .string)
-#elseif os(iOS)
+                #elseif os(iOS)
                 UIPasteboard.general.string = item
-#endif
+                #endif
                 copied = true
             }
             .alert("Copied", isPresented: $copied) {
