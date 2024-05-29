@@ -15,9 +15,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "0A56E3332B792C6900CEC00A"
-               BuildableName = "Pay Join.app"
-               BlueprintName = "Pay Join"
-               ReferencedContainer = "container:Pay Join.xcodeproj">
+               BuildableName = "Unify.app"
+               BlueprintName = "Unify"
+               ReferencedContainer = "container:Unify.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -45,9 +45,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "0A56E3332B792C6900CEC00A"
-            BuildableName = "Pay Join.app"
-            BlueprintName = "Pay Join"
-            ReferencedContainer = "container:Pay Join.xcodeproj">
+            BuildableName = "Unify.app"
+            BlueprintName = "Unify"
+            ReferencedContainer = "container:Unify.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -62,9 +62,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "0A56E3332B792C6900CEC00A"
-            BuildableName = "Pay Join.app"
-            BlueprintName = "Pay Join"
-            ReferencedContainer = "container:Pay Join.xcodeproj">
+            BuildableName = "Unify.app"
+            BlueprintName = "Unify"
+            ReferencedContainer = "container:Unify.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

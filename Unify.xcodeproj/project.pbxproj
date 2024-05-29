@@ -78,7 +78,7 @@
 		0A0F18A92BD2B1C700EE8168 /* ScannerViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScannerViewController.swift; sourceTree = "<group>"; };
 		0A0F18AA2BD2B1C700EE8168 /* CodeScanner.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CodeScanner.swift; sourceTree = "<group>"; };
 		0A206C522B7BE58000BDBFE1 /* Utxo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utxo.swift; sourceTree = "<group>"; };
-		0A56E3342B792C6900CEC00A /* Pay Join.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Pay Join.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		0A56E3342B792C6900CEC00A /* Unify.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Unify.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		0A56E3372B792C6900CEC00A /* Pay_JoinApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Pay_JoinApp.swift; sourceTree = "<group>"; };
 		0A56E3392B792C6900CEC00A /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		0A56E33B2B792C6C00CEC00A /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -184,7 +184,7 @@
 			isa = PBXGroup;
 			children = (
 				0A0F184E2B9575E900EE8168 /* README.md */,
-				0A56E3362B792C6900CEC00A /* Pay Join */,
+				0A56E3362B792C6900CEC00A /* Unify */,
 				0A56E3352B792C6900CEC00A /* Products */,
 			);
 			sourceTree = "<group>";
@@ -192,12 +192,12 @@
 		0A56E3352B792C6900CEC00A /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				0A56E3342B792C6900CEC00A /* Pay Join.app */,
+				0A56E3342B792C6900CEC00A /* Unify.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		0A56E3362B792C6900CEC00A /* Pay Join */ = {
+		0A56E3362B792C6900CEC00A /* Unify */ = {
 			isa = PBXGroup;
 			children = (
 				0A0F183F2B92BA3C00EE8168 /* LibWally.xcframework */,
@@ -216,7 +216,7 @@
 				0A0F183A2B7D417A00EE8168 /* KeyChain.swift */,
 				0A6A83DF2BD95D8000A6546A /* Signer.swift */,
 			);
-			path = "Pay Join";
+			path = Unify;
 			sourceTree = "<group>";
 		};
 		0A56E33D2B792C6C00CEC00A /* Preview Content */ = {
@@ -230,9 +230,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		0A56E3332B792C6900CEC00A /* Pay Join */ = {
+		0A56E3332B792C6900CEC00A /* Unify */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 0A56E3472B792C6C00CEC00A /* Build configuration list for PBXNativeTarget "Pay Join" */;
+			buildConfigurationList = 0A56E3472B792C6C00CEC00A /* Build configuration list for PBXNativeTarget "Unify" */;
 			buildPhases = (
 				0A56E3302B792C6900CEC00A /* Sources */,
 				0A56E3312B792C6900CEC00A /* Frameworks */,
@@ -243,13 +243,13 @@
 			);
 			dependencies = (
 			);
-			name = "Pay Join";
+			name = Unify;
 			packageProductDependencies = (
 				0A0F188B2BA3F68500EE8168 /* NostrSDK */,
 				0A0F18A02BAC95DE00EE8168 /* SwiftUICoreImage */,
 			);
 			productName = "Pay Join";
-			productReference = 0A56E3342B792C6900CEC00A /* Pay Join.app */;
+			productReference = 0A56E3342B792C6900CEC00A /* Unify.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -267,7 +267,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 0A56E32F2B792C6900CEC00A /* Build configuration list for PBXProject "Pay Join" */;
+			buildConfigurationList = 0A56E32F2B792C6900CEC00A /* Build configuration list for PBXProject "Unify" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -284,7 +284,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				0A56E3332B792C6900CEC00A /* Pay Join */,
+				0A56E3332B792C6900CEC00A /* Unify */,
 			);
 		};
 /* End PBXProject section */
@@ -400,6 +400,8 @@
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = Unify;
+				PRODUCT_NAME = Unify;
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -456,6 +458,8 @@
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = Unify;
+				PRODUCT_NAME = Unify;
 				SDKROOT = iphoneos;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				VALIDATE_PRODUCT = YES;
@@ -469,7 +473,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "\"Pay Join/Preview Content\"";
+				DEVELOPMENT_ASSET_PATHS = "\"Unify/Preview Content\"";
 				DEVELOPMENT_TEAM = 8JHDU5M9KD;
 				ENABLE_PREVIEWS = YES;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -502,7 +506,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "\"Pay Join/Preview Content\"";
+				DEVELOPMENT_ASSET_PATHS = "\"Unify/Preview Content\"";
 				DEVELOPMENT_TEAM = 8JHDU5M9KD;
 				ENABLE_PREVIEWS = YES;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -531,7 +535,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		0A56E32F2B792C6900CEC00A /* Build configuration list for PBXProject "Pay Join" */ = {
+		0A56E32F2B792C6900CEC00A /* Build configuration list for PBXProject "Unify" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				0A56E3452B792C6C00CEC00A /* Debug */,
@@ -540,7 +544,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		0A56E3472B792C6C00CEC00A /* Build configuration list for PBXNativeTarget "Pay Join" */ = {
+		0A56E3472B792C6C00CEC00A /* Build configuration list for PBXNativeTarget "Unify" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				0A56E3482B792C6C00CEC00A /* Debug */,

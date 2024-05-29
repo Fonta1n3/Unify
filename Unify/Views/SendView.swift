@@ -17,10 +17,6 @@ struct SendView: View, DirectMessageEncrypting {
     @State private var showUtxos = false
     @State private var utxos: [Utxo] = []
     @State private var showNoUtxosMessage = false
-    @State private var pickerItem: PhotosPickerItem?
-    @State private var selectedImage: Image?
-    @State private var isShowingScanner = false
-    //@State private var invoiceIncomplete = false
     
     var body: some View {
         Spacer()
@@ -81,7 +77,6 @@ struct SendView: View, DirectMessageEncrypting {
                 guard let peerNpub = UserDefaults.standard.object(forKey: "peerNpub") as? String else  {
                     return
                 }
-                
                 guard let decryptedMessage = try? decrypt(encryptedContent: response,
                                                           privateKey: ourKeypair.privateKey,
                                                           publicKey: PublicKey(npub: peerNpub)!) else {
@@ -99,66 +94,6 @@ struct SendView: View, DirectMessageEncrypting {
         }
     }
     
-#if os(iOS)
-//    func handleScan(result: Result<ScanResult, ScanError>) {
-//        isShowingScanner = false
-//        switch result {
-//        case .success(let result):
-//            let invoice = Invoice(result.string)
-//            guard let _ = invoice.address,
-//                  let _ = invoice.amount,
-//                  let _ = invoice.recipientsNpub else {
-//                return
-//            }
-//            uploadedInvoice = invoice
-//            invoiceUploaded = true
-//            
-//        case .failure(let error):
-//            print("Scanning failed: \(error.localizedDescription)")
-//        }
-//    }
-#endif
-    
-//    private func invoiceFromQrImage(ciImage: CIImage) -> Invoice? {
-//        var qrCodeText = ""
-//        let detector: CIDetector = CIDetector(ofType: CIDetectorTypeQRCode, context: nil, options: [CIDetectorAccuracy: CIDetectorAccuracyHigh])!
-//        let features = detector.features(in: ciImage)
-//        for feature in features as! [CIQRCodeFeature] {
-//            qrCodeText += feature.messageString!
-//        }
-//        let invoice = Invoice(qrCodeText)
-//        guard let _ = invoice.address, let _ = invoice.recipientsNpub, let _ = invoice.amount else {
-//            return nil
-//        }
-//        return invoice
-//    }
-    
-//    private func handlePaste() -> Invoice? {
-//#if os(macOS)
-//        let pasteboard = NSPasteboard.general
-//        guard let url = pasteboard.pasteboardItems?.first?.string(forType: .string) else {
-//            let type = NSPasteboard.PasteboardType.tiff
-//            guard let imgData = pasteboard.data(forType: type) else { return nil }
-//            let ciImage: CIImage = CIImage(nsImage: NSImage(data: imgData)!)
-//            return invoiceFromQrImage(ciImage: ciImage)
-//        }
-//        
-//        let invoice = Invoice(url)
-//        guard let _ = invoice.address, let _ = invoice.amount, let _ = invoice.recipientsNpub else { return nil }
-//        return invoice
-//        
-//#elseif os(iOS)
-//        let pasteboard = UIPasteboard.general
-//        guard let image = pasteboard.image else {
-//            guard let text = pasteboard.string else { return nil }
-//            let invoice = Invoice(text)
-//            guard let _ = invoice.address, let _ = invoice.amount, let _ = invoice.recipientsNpub else { return nil }
-//            return invoice
-//        }
-//        guard let ciImage = image.ciImage, let invoice = invoiceFromQrImage(ciImage: ciImage) else { return nil }
-//        return invoice
-//#endif
-//    }
     
     private func getUtxos() {
         let p = List_Unspent([:])
@@ -214,12 +149,9 @@ struct UploadInvoiceView: View {
             Button("Scan QR", systemImage: "qrcode.viewfinder") {
                 isShowingScanner = true
             }
-//                .onTapGesture {
-//                    
-//                }
-                .sheet(isPresented: $isShowingScanner) {
-                    CodeScannerView(codeTypes: [.qr], simulatedData: "", completion: handleScan)
-                }
+            .sheet(isPresented: $isShowingScanner) {
+                CodeScannerView(codeTypes: [.qr], simulatedData: "", completion: handleScan)
+            }
             #endif
             Button("Paste", systemImage: "doc.on.clipboard") {
                 uploadedInvoice = handlePaste()
@@ -316,7 +248,6 @@ struct SpendableUtxosView: View, DirectMessageEncrypting {
                     let textLabel = address + ": " + "\(amount)" + " btc"
                     HStack {
                         Text(textLabel)
-                        
                         if let uploadedInvoice = uploadedInvoice {
                             Button("Pay Join this UTXO") {
                                 payInvoice(invoice: uploadedInvoice, utxo: utxo, utxos: utxos)
@@ -324,7 +255,6 @@ struct SpendableUtxosView: View, DirectMessageEncrypting {
                             .buttonStyle(.bordered)
                             .disabled(amount < uploadedInvoice.amount!)
                         }
-                        
                     }
                     .onAppear {
                         spendableBalance += utxo.amount ?? 0.0
@@ -338,25 +268,26 @@ struct SpendableUtxosView: View, DirectMessageEncrypting {
         if let signedRawTx = signedRawTx {
             Section("Signed Tx") {
                 Text(signedRawTx)
-                ShareLink(" ", item: signedRawTx)
-                Button(" ", systemImage: "doc.on.doc") {
-                    #if os(macOS)
-                    NSPasteboard.general.clearContents()
-                    NSPasteboard.general.setString(signedRawTx, forType: .string)
-                    #elseif os(iOS)
-                    UIPasteboard.general.string = signedRawTx
-                    #endif
-                    copied = true
-                }
-                
-                Button("Broadcast") {
-                    let p = Send_Raw_Transaction(["hexstring": signedRawTx])
-                    BitcoinCoreRPC.shared.btcRPC(method: .sendrawtransaction(p)) { (response, errorDesc) in
-                        guard let response = response as? String else {
-                            print("error sending")
-                            return
+                HStack() {
+                    ShareLink(" ", item: signedRawTx)
+                    Button(" ", systemImage: "doc.on.doc") {
+                        #if os(macOS)
+                        NSPasteboard.general.clearContents()
+                        NSPasteboard.general.setString(signedRawTx, forType: .string)
+                        #elseif os(iOS)
+                        UIPasteboard.general.string = signedRawTx
+                        #endif
+                        copied = true
+                    }
+                    Button("Broadcast") {
+                        let p = Send_Raw_Transaction(["hexstring": signedRawTx])
+                        BitcoinCoreRPC.shared.btcRPC(method: .sendrawtransaction(p)) { (response, errorDesc) in
+                            guard let response = response as? String else {
+                                print("error sending")
+                                return
+                            }
+                            txid = response
                         }
-                        txid = response
                     }
                 }
             }
@@ -367,9 +298,7 @@ struct SpendableUtxosView: View, DirectMessageEncrypting {
                 Text("Transaction sent ✓")
                 Text("txid: \(txid)")
             }
-                
         }
-            
     }
     
     
