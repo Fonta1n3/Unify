@@ -15,54 +15,58 @@ struct HomeView: View {
     private let views: [any View] = [ReceiveView(), SendView(), ConfigView()]
     
     private func createDefaultCreds() {
-        DataManager.retrieve(entityName: "Credentials", completion: { credentials in
-            guard let _ = credentials else {
-                // first create and save encKey to keychain so we can store things encrypted to Core Data
-                guard KeyChain.set(Crypto.privateKeyData(), forKey: "encKey") else {
-                    showingNotSavedAlert = true
-                    print("unable to save encKey")
-                    return
-                }
-                
-                guard let rpcauthcreds = RPCAuth().generateCreds(username: "PayJoin", password: nil) else {
-                    showingNotSavedAlert = true
-                    return
-                }
-                
-                let rpcpass = rpcauthcreds.password
-                
-                guard let encRpcPass = Crypto.encrypt(rpcpass.data(using: .utf8)!) else {
-                    showingNotSavedAlert = true
-                    print("unable to encrypt rpcpass")
-                    return
-                }
-                
-                let privkey = Crypto.nostrPrivateKey()
-                
-                guard let encryptedNostrPrivateKey = Crypto.encrypt(privkey) else {
-                    showingNotSavedAlert = true
-                    print("unable to encrypt nostr private key.")
-                    return
-                }
-                
-                let dict: [String:Any] = [
-                    "nostrPrivkey": encryptedNostrPrivateKey,
-                    "rpcPass": encRpcPass,
-                    "rpcUser": "PayJoin"
-                ]
-                
-                DataManager.saveEntity(entityName: "Credentials", dict: dict) { saved in
-                    guard saved else {
-                        print("creds not saved")
+        //DataManager.deleteAllData(entityName: "Credentials") { deleted in
+            DataManager.retrieve(entityName: "Credentials", completion: { credentials in
+                guard let _ = credentials else {
+                    // first create and save encKey to keychain so we can store things encrypted to Core Data
+                    if KeyChain.getData("encKey") == nil {
+                        guard KeyChain.set(Crypto.privateKeyData(), forKey: "encKey") else {
+                            showingNotSavedAlert = true
+                            print("unable to save encKey")
+                            return
+                        }
+                    }
+                    
+                    guard let rpcauthcreds = RPCAuth().generateCreds(username: "Unify", password: nil) else {
                         showingNotSavedAlert = true
                         return
                     }
-                    print("credentials saved")
-                    showingSavedAlert = true
+                    
+                    let rpcpass = rpcauthcreds.password
+                    
+                    guard let encRpcPass = Crypto.encrypt(rpcpass.data(using: .utf8)!) else {
+                        showingNotSavedAlert = true
+                        print("unable to encrypt rpcpass")
+                        return
+                    }
+                    
+                    let privkey = Crypto.nostrPrivateKey()
+                    
+                    guard let encryptedNostrPrivateKey = Crypto.encrypt(privkey) else {
+                        showingNotSavedAlert = true
+                        print("unable to encrypt nostr private key.")
+                        return
+                    }
+                    
+                    let dict: [String:Any] = [
+                        "nostrPrivkey": encryptedNostrPrivateKey,
+                        "rpcPass": encRpcPass,
+                        "rpcUser": "PayJoin"
+                    ]
+                    
+                    DataManager.saveEntity(entityName: "Credentials", dict: dict) { saved in
+                        guard saved else {
+                            print("creds not saved")
+                            showingNotSavedAlert = true
+                            return
+                        }
+                        print("credentials saved")
+                        showingSavedAlert = true
+                    }
+                    return
                 }
-                return
-            }
-        })
+            })
+        //}
     }
     
     

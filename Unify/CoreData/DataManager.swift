@@ -24,7 +24,7 @@ class DataManager: NSObject, ObservableObject {
     }
     
     class func retrieve(entityName: String, completion: @escaping (([String:Any]?)) -> Void) {
-        DispatchQueue.main.async {
+        //DispatchQueue.main.async {
             let context = DataManager.shared.container.viewContext
             let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: entityName)
             fetchRequest.returnsObjectsAsFaults = false
@@ -39,11 +39,11 @@ class DataManager: NSObject, ObservableObject {
             } catch {
                 completion(nil)
             }
-        }
+        //}
     }
     
     class func retrieveSigners(completion: @escaping (([[String:Any]]?)) -> Void) {
-        DispatchQueue.main.async {
+        //DispatchQueue.main.async {
             let context = DataManager.shared.container.viewContext
             let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: "Signers")
             fetchRequest.returnsObjectsAsFaults = false
@@ -58,11 +58,11 @@ class DataManager: NSObject, ObservableObject {
             } catch {
                 completion(nil)
             }
-        }
+        //}
     }
     
     class func deleteAllData(entityName: String, completion: @escaping ((Bool)) -> Void) {
-        DispatchQueue.main.async {
+        //DispatchQueue.main.async {
             let context = DataManager.shared.container.viewContext
             let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: entityName)
             fetchRequest.returnsObjectsAsFaults = false
@@ -76,11 +76,11 @@ class DataManager: NSObject, ObservableObject {
             } catch {
                 completion(false)
             }
-        }
+        //}
     }
     
     class func saveEntity(entityName: String, dict: [String:Any], completion: @escaping ((Bool)) -> Void) {
-        DispatchQueue.main.async {
+        //DispatchQueue.main.async {
             let context = DataManager.shared.container.viewContext
 
             guard let entity = NSEntityDescription.entity(forEntityName: entityName, in: context) else {
@@ -101,11 +101,11 @@ class DataManager: NSObject, ObservableObject {
                 }
             }
             completion(success)
-        }
+        //}
     }
     
     class func update(entityName: String, keyToUpdate: String, newValue: Any, completion: @escaping ((Bool)) -> Void) {
-        DispatchQueue.main.async {
+        //DispatchQueue.main.async {
             let context = DataManager.shared.container.viewContext
             let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: entityName)
             fetchRequest.returnsObjectsAsFaults = false
@@ -118,6 +118,6 @@ class DataManager: NSObject, ObservableObject {
             } catch {
                 completion(false)
             }
-        }
+        //}
     }
 }

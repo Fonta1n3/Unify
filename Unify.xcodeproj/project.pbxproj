@@ -26,7 +26,7 @@
 		0A0F18AD2BD2B1C700EE8168 /* ScannerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0F18A92BD2B1C700EE8168 /* ScannerViewController.swift */; };
 		0A0F18AE2BD2B1C700EE8168 /* CodeScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0F18AA2BD2B1C700EE8168 /* CodeScanner.swift */; };
 		0A206C532B7BE58000BDBFE1 /* Utxo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A206C522B7BE58000BDBFE1 /* Utxo.swift */; };
-		0A56E3382B792C6900CEC00A /* Pay_JoinApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A56E3372B792C6900CEC00A /* Pay_JoinApp.swift */; };
+		0A56E3382B792C6900CEC00A /* UnifyApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A56E3372B792C6900CEC00A /* UnifyApp.swift */; };
 		0A56E33A2B792C6900CEC00A /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A56E3392B792C6900CEC00A /* HomeView.swift */; };
 		0A56E33C2B792C6C00CEC00A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0A56E33B2B792C6C00CEC00A /* Assets.xcassets */; };
 		0A56E33F2B792C6C00CEC00A /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0A56E33E2B792C6C00CEC00A /* Preview Assets.xcassets */; };
@@ -79,7 +79,7 @@
 		0A0F18AA2BD2B1C700EE8168 /* CodeScanner.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CodeScanner.swift; sourceTree = "<group>"; };
 		0A206C522B7BE58000BDBFE1 /* Utxo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utxo.swift; sourceTree = "<group>"; };
 		0A56E3342B792C6900CEC00A /* Unify.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Unify.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		0A56E3372B792C6900CEC00A /* Pay_JoinApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Pay_JoinApp.swift; sourceTree = "<group>"; };
+		0A56E3372B792C6900CEC00A /* UnifyApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifyApp.swift; sourceTree = "<group>"; };
 		0A56E3392B792C6900CEC00A /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		0A56E33B2B792C6C00CEC00A /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		0A56E33E2B792C6C00CEC00A /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
@@ -202,7 +202,7 @@
 			children = (
 				0A0F183F2B92BA3C00EE8168 /* LibWally.xcframework */,
 				0A0F18AF2BD2B1D100EE8168 /* CodeScanner */,
-				0A56E3372B792C6900CEC00A /* Pay_JoinApp.swift */,
+				0A56E3372B792C6900CEC00A /* UnifyApp.swift */,
 				0A56E33B2B792C6C00CEC00A /* Assets.xcassets */,
 				0A56E3422B792C6C00CEC00A /* Pay_Join.xcdatamodeld */,
 				0A56E33D2B792C6C00CEC00A /* Preview Content */,
@@ -328,7 +328,7 @@
 				0A6A83E22BD95E8700A6546A /* SignerStruct.swift in Sources */,
 				0A56E3442B792C6C00CEC00A /* Pay_Join.xcdatamodeld in Sources */,
 				0A56E34F2B795BC600CEC00A /* Crypto.swift in Sources */,
-				0A56E3382B792C6900CEC00A /* Pay_JoinApp.swift in Sources */,
+				0A56E3382B792C6900CEC00A /* UnifyApp.swift in Sources */,
 				0A0F18332B7D1B4C00EE8168 /* ReceiveView.swift in Sources */,
 				0A0F184B2B954B8000EE8168 /* Errors.swift in Sources */,
 				0A0F188E2BA97CD800EE8168 /* Invoice.swift in Sources */,
@@ -478,6 +478,7 @@
 				ENABLE_PREVIEWS = YES;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Unify Wallet";
 				INFOPLIST_KEY_NSCameraUsageDescription = "To scan an invoice in the form of a QR code.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -489,7 +490,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.dentonllc.Pay-Join";
+				PRODUCT_BUNDLE_IDENTIFIER = com.dentonllc.UnifyWallet;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
 				SUPPORTS_MACCATALYST = NO;
@@ -511,6 +512,7 @@
 				ENABLE_PREVIEWS = YES;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Unify Wallet";
 				INFOPLIST_KEY_NSCameraUsageDescription = "To scan an invoice in the form of a QR code.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -522,7 +524,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.dentonllc.Pay-Join";
+				PRODUCT_BUNDLE_IDENTIFIER = com.dentonllc.UnifyWallet;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
 				SUPPORTS_MACCATALYST = NO;

@@ -75,11 +75,11 @@ class Crypto {
     }
     
     static func privateKeyData() -> Data {
-        return P256.Signing.PrivateKey().rawRepresentation
+        return try! secp256k1.KeyAgreement.PrivateKey().rawRepresentation
     }
     
     static func nostrPrivateKey() -> Data {
-        return P256.Signing.PrivateKey().rawRepresentation
+        return try! secp256k1.KeyAgreement.PrivateKey().rawRepresentation
     }
     
     static func publicKey(privKey: String) -> String {

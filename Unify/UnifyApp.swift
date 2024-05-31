@@ -8,7 +8,7 @@
 import SwiftUI
 
 @main
-struct Pay_JoinApp: App {
+struct UnifyApp: App {
     @StateObject private var manager: DataManager = DataManager()
 
     var body: some Scene {
