@@ -18,7 +18,6 @@
 		0A0F184D2B954CF500EE8168 /* Messages.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0F184C2B954CF500EE8168 /* Messages.swift */; };
 		0A0F18502BA002FB00EE8168 /* NostrFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0F184F2BA002FB00EE8168 /* NostrFilter.swift */; };
 		0A0F18642BA012BE00EE8168 /* Bech32.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0F18632BA012BE00EE8168 /* Bech32.swift */; };
-		0A0F18662BA125EA00EE8168 /* Nip4Encryption.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0F18652BA125EA00EE8168 /* Nip4Encryption.swift */; };
 		0A0F188C2BA3F68500EE8168 /* NostrSDK in Frameworks */ = {isa = PBXBuildFile; productRef = 0A0F188B2BA3F68500EE8168 /* NostrSDK */; };
 		0A0F188E2BA97CD800EE8168 /* Invoice.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0F188D2BA97CD800EE8168 /* Invoice.swift */; };
 		0A0F18A12BAC95DE00EE8168 /* SwiftUICoreImage in Frameworks */ = {isa = PBXBuildFile; productRef = 0A0F18A02BAC95DE00EE8168 /* SwiftUICoreImage */; };
@@ -72,7 +71,6 @@
 		0A0F184E2B9575E900EE8168 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		0A0F184F2BA002FB00EE8168 /* NostrFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NostrFilter.swift; sourceTree = "<group>"; };
 		0A0F18632BA012BE00EE8168 /* Bech32.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Bech32.swift; sourceTree = "<group>"; };
-		0A0F18652BA125EA00EE8168 /* Nip4Encryption.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Nip4Encryption.swift; sourceTree = "<group>"; };
 		0A0F188D2BA97CD800EE8168 /* Invoice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Invoice.swift; sourceTree = "<group>"; };
 		0A0F18A72BD2B1C700EE8168 /* AVCaptureDevice+bestForBuiltInCamera.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "AVCaptureDevice+bestForBuiltInCamera.swift"; sourceTree = "<group>"; };
 		0A0F18A92BD2B1C700EE8168 /* ScannerViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScannerViewController.swift; sourceTree = "<group>"; };
@@ -132,7 +130,6 @@
 				0A0F18382B7D3DDC00EE8168 /* NostrEvent.swift */,
 				0A0F184F2BA002FB00EE8168 /* NostrFilter.swift */,
 				0A0F18632BA012BE00EE8168 /* Bech32.swift */,
-				0A0F18652BA125EA00EE8168 /* Nip4Encryption.swift */,
 			);
 			path = Nostr;
 			sourceTree = "<group>";
@@ -334,7 +331,6 @@
 				0A0F188E2BA97CD800EE8168 /* Invoice.swift in Sources */,
 				0A0F18AD2BD2B1C700EE8168 /* ScannerViewController.swift in Sources */,
 				0A0F18392B7D3DDC00EE8168 /* NostrEvent.swift in Sources */,
-				0A0F18662BA125EA00EE8168 /* Nip4Encryption.swift in Sources */,
 				0A56E3592B79760500CEC00A /* RPCAuth.swift in Sources */,
 				0A206C532B7BE58000BDBFE1 /* Utxo.swift in Sources */,
 			);
