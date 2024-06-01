@@ -102,7 +102,7 @@ class BitcoinCoreRPC {
                     if let httpResponse = response as? HTTPURLResponse {
                         switch httpResponse.statusCode {
                         case 401:
-                            completion((nil, "Looks like your rpc credentials are incorrect. Make sure to add your rpc authentication string to your bitcoin.conf, then restart your node and try again."))
+                            completion((nil, "Looks like your rpc credentials are incorrect. Make sure to add your rpc authentication string to your bitcoin.conf, restart your node and try again."))
                         case 403:
                             completion((nil, "The bitcoin-cli \(method) command has not been added to your rpcwhitelist, add \(method) to your bitcoin.conf rpcwhitelsist, reboot Bitcoin Core and try again."))
                         default:

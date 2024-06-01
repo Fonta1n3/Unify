@@ -25,11 +25,28 @@ struct ConfigView: View {
     @State private var peerNpub = UserDefaults.standard.object(forKey: "peerNpub") as? String ?? ""
     @State private var nostrPrivkey = ""
     @State private var encSigner = ""
+    @State private var bitcoinCoreConnected = false
+    @State private var tint: Color = .red
     
     
     var body: some View {
         Label("Configuration", systemImage: "gear")
         Form() {
+            Section("Bitcoin Core") {
+                Label("Bitcoin Core Status", systemImage: "server.rack")
+                HStack() {
+                    Image(systemName: "circle.fill")
+                        .foregroundColor(tint)
+                    if bitcoinCoreConnected {
+                        Text("Connected")
+                    } else {
+                        Text("Disconnected")
+                    }
+                }
+                if !bitcoinCoreConnected {
+                    Text(bitcoinCoreError)
+                }
+            }
             Section("RPC Credentials") {
                 Label("RPC User", systemImage: "person.circle")
                 TextField("User", text: $rpcUser)
@@ -109,11 +126,12 @@ struct ConfigView: View {
             Section("Signer") {
                 Label("BIP39 Menmonic", systemImage: "signature")
                 HStack() {
-                    SecureField("Encrypted BIP 39 mnemonic", text: $encSigner)
+                    SecureField("BIP 39 mnemonic", text: $encSigner)
                     Button("Save") {
                         updateSigner()
                     }
                 }
+                Text("Your signer is encrypted before being saved.")
             }
         }
         .autocorrectionDisabled()
@@ -189,16 +207,18 @@ struct ConfigView: View {
             BitcoinCoreRPC.shared.btcRPC(method: .listwallets) { (response, errorDesc) in
                 guard errorDesc == nil else {
                     bitcoinCoreError = errorDesc!
-                    showBitcoinCoreError = true
+                    //showBitcoinCoreError = true
                     return
                 }
                 guard let wallets = response as? [String] else {
-                    showBitcoinCoreError = true
+                    //showBitcoinCoreError = true
                     bitcoinCoreError = BitcoinCoreError.noWallets.localizedDescription
                     return
                 }
+                bitcoinCoreConnected = true
+                tint = .green
                 guard wallets.count > 0 else {
-                    showBitcoinCoreError = true
+                    //showBitcoinCoreError = true
                     bitcoinCoreError = "No wallets exist yet..."
                     return
                 }
@@ -261,8 +281,8 @@ struct ConfigView: View {
     
     
     private func updateNostrPeer() {
-        guard let npub = KeyPair.
-        UserDefaults.standard.setValue(peerNpub, forKey: "peerNpub")
+        guard let npub = PublicKey(npub: peerNpub) else { return }
+        UserDefaults.standard.setValue(npub, forKey: "peerNpub")
     }
     
     
@@ -294,10 +314,11 @@ struct CopyView: View {
     let item: String
     
     var body: some View {
-        HStack {
-            LabeledContent("", value: item)
+        HStack() {
+            Text(item)
                 .truncationMode(.middle)
                 .lineLimit(1)
+                .multilineTextAlignment(.leading)
             ShareLink("", item: item)
             Button("", systemImage: "doc.on.doc") {
                 #if os(macOS)

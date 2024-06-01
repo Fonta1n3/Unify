@@ -26,22 +26,29 @@ Nearly a [BIP78 over Nostr Payjoin](https://github.com/Kukks/BTCPayServer.BIP78/
 - Click "Send".
 - Scan/paste or automatically receive an invoice via nostr.
 - Select an input to pay the invoice with.
+- Tap "Payjoin this utxo" to pay the invoice with the selected utxo.
+- Unify then builds and signs a psbt, encrypts it and sends it to the recipient via nostr.
+- The recipient will do its thing and when complete will send the "Payjoin proposal" to the sender.
+- Upon recipt of the "Pyajoin proposal" the UI will update and carry out a series of checks on the psbt to ensure we are not being duped into signing a transaction we shouldn't be.
+- If all checks pass you will see the raw ytransaction in hex format with an export or broadcast button enabled.
+- Tap broadcast to send the transaction.
 
 
-### Limitations
+## Limitations
 - Only works with a local node.
 - Native segwit inputs and outputs only.
 - Must have a BIP39 signer that can sign for your inputs. 
 - Tor is not currently used for nostr traffic, a VPN is recommended.
 
-### Roadmap
-- NIP44 (currently utilizes NIP4 for compatibility).
+## Roadmap
+- NIP44? (currently utilizes NIP4 for cross compatibility).
 - Watch-only capability.
 - Manual change address selection (currently Bitcoin Core will automatically add a change output if needed).
-- Nostr-Connect/Tor for Bitcoin Core node connection (currently `localhost` only).
+- Tor for Bitcoin Core node connection (currently `localhost` only).
 - A "PSBT" tab, where the user can create a psbt by adding inputs/outputs as they wish or by uploading a PSBT.
 - Output substitution.
 - Traditional BIP78 endpoints? The app can create an http server.
+
 
 
 

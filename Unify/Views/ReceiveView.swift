@@ -38,11 +38,13 @@ struct ReceiveView: View, DirectMessageEncrypting {
         Label("Receive", systemImage: "qrcode")
         Form() {
             Section("Create Invoice") {
+                Label("BTC Amount", systemImage: "bitcoinsign.circle")
                 TextField("Amount in btc", text: $amount)
                 #if os(iOS)
                     .keyboardType(.decimalPad)
                 #endif
-                TextField("Recipient address", text: $address)
+                Label("Recipient address", systemImage: "qrcode")
+                TextField("Bitcoin address", text: $address)
                 #if os(iOS)
                     .keyboardType(.default)
                 #endif
