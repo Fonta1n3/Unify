@@ -3,7 +3,7 @@
 ⚠️ Currently in very early stages, likely to change significantly in the future. It is Alpha and not been tested by anyone but myself.
 
 Nearly a [BIP78 over Nostr Payjoin](https://github.com/Kukks/BTCPayServer.BIP78/tree/nostr/BTCPayServer.BIP78.Nostr) wallet.
-Unify is fully funtional, however won't be compatible with BTCPayServer, it will be soon.
+Unify is fully functional, however won't be compatible with BTCPayServer, it will be soon.
 
 ## Config
 - Upon first launch RPC and Nostr credentials are automatically created for you (you can edit them, `rpcauth` will automatically update).
