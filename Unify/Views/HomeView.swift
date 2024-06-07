@@ -6,67 +6,68 @@
 //
 
 import SwiftUI
+import NostrSDK
 
 struct HomeView: View {
-    @State private var showingNotSavedAlert = false
-    @State private var showingSavedAlert = false
+    @State private var showNotSavedAlert = false
+    @State private var showSavedAlert = false
     
     private let names = ["Receive", "Send", "Config"]
     private let views: [any View] = [ReceiveView(), SendView(), ConfigView()]
     
     private func createDefaultCreds() {
-        //DataManager.deleteAllData(entityName: "Credentials") { deleted in
-            DataManager.retrieve(entityName: "Credentials", completion: { credentials in
-                guard let _ = credentials else {
-                    // first create and save encKey to keychain so we can store things encrypted to Core Data
-                    if KeyChain.getData("encKey") == nil {
-                        guard KeyChain.set(Crypto.privateKeyData(), forKey: "encKey") else {
-                            showingNotSavedAlert = true
-                            print("unable to save encKey")
-                            return
-                        }
-                    }
-                    
-                    guard let rpcauthcreds = RPCAuth().generateCreds(username: "Unify", password: nil) else {
-                        showingNotSavedAlert = true
-                        return
-                    }
-                    
-                    let rpcpass = rpcauthcreds.password
-                    
-                    guard let encRpcPass = Crypto.encrypt(rpcpass.data(using: .utf8)!) else {
-                        showingNotSavedAlert = true
-                        print("unable to encrypt rpcpass")
-                        return
-                    }
-                    
-                    let privkey = Crypto.nostrPrivateKey()
-                    
-                    guard let encryptedNostrPrivateKey = Crypto.encrypt(privkey) else {
-                        showingNotSavedAlert = true
-                        print("unable to encrypt nostr private key.")
-                        return
-                    }
-                    
-                    let dict: [String:Any] = [
-                        "nostrPrivkey": encryptedNostrPrivateKey,
-                        "rpcPass": encRpcPass,
-                        "rpcUser": "PayJoin"
-                    ]
-                    
-                    DataManager.saveEntity(entityName: "Credentials", dict: dict) { saved in
-                        guard saved else {
-                            print("creds not saved")
-                            showingNotSavedAlert = true
-                            return
-                        }
-                        print("credentials saved")
-                        showingSavedAlert = true
-                    }
+        DataManager.retrieve(entityName: "Credentials") { credentials in
+            guard let _ = credentials else {
+                
+                guard KeyChain.set(Crypto.privKeyData(), forKey: "encKey") else {
+                    showNotSavedAlert = true
                     return
                 }
-            })
-        //}
+                
+                guard let rpcauthcreds = RPCAuth().generateCreds(username: "Unify", password: nil) else {
+                    showNotSavedAlert = true
+                    return
+                }
+                
+                let rpcpass = rpcauthcreds.password
+                
+                guard let encRpcPass = Crypto.encrypt(rpcpass.data(using: .utf8)!) else {
+                    showNotSavedAlert = true
+                    return
+                }
+                
+                guard let keypair = Keypair() else {
+                    showNotSavedAlert = true
+                    return
+                }
+                
+                guard let encryptedNostrPrivateKey = Crypto.encrypt(keypair.privateKey.dataRepresentation) else {
+                    showNotSavedAlert = true
+                    return
+                }
+                
+                let dict: [String:Any] = [
+                    "nostrPrivkey": encryptedNostrPrivateKey,
+                    "rpcPass": encRpcPass,
+                    "rpcUser": "Unify"
+                ]
+                
+                saveCreds(dict: dict)
+                
+                return
+            }
+        }
+    }
+    
+    private func saveCreds(dict: [String: Any]) {
+        DataManager.saveEntity(entityName: "Credentials", dict: dict) { saved in
+            guard saved else {
+                showNotSavedAlert = true
+                return
+            }
+            
+            showSavedAlert = true
+        }
     }
     
     
@@ -92,14 +93,16 @@ struct HomeView: View {
             Text(Messages.contentViewPrompt.description)
             
         }
-        .alert(CoreDataError.notSaved.localizedDescription, isPresented: $showingNotSavedAlert) {
+        .alert(CoreDataError.notSaved.localizedDescription, isPresented: $showNotSavedAlert) {
             Button("OK", role: .cancel) { }
         }
-        .alert(Messages.savedCredentials.description, isPresented: $showingSavedAlert) {
+        .alert(Messages.savedCredentials.description, isPresented: $showSavedAlert) {
             Button("OK", role: .cancel) { }
         }
         .onAppear {
-            createDefaultCreds()
+            DispatchQueue.global(qos: .background).async {
+                createDefaultCreds()
+            }
         }
     }
 }

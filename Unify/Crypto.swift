@@ -14,14 +14,16 @@ class Crypto {
     
     static func encrypt(_ data: Data) -> Data? {
         guard let key = KeyChain.getData("encKey") else {
-            if KeyChain.set(Crypto.privateKeyData(), forKey: "encKey") {
+            if KeyChain.set(Crypto.privKeyData(), forKey: "encKey") {
                 return encrypt(data)
             } else {
-                print("no encKey saved"); return nil
+                return nil
             }
         }
+        
         return try? ChaChaPoly.seal(data, using: SymmetricKey(data: key)).combined
     }
+    
     
     static func decrypt(_ data: Data) -> Data? {
         guard let key = KeyChain.getData("encKey"),
@@ -32,11 +34,13 @@ class Crypto {
         return try? ChaChaPoly.open(box, using: SymmetricKey(data: key))
     }
     
+    
     static func sha256hash(_ data: Data) -> Data {
         let digest = SHA256.hash(data: data)
         
         return Data(digest)
     }
+    
     
     static func seed() -> String? {
         var words: String?
@@ -55,79 +59,20 @@ class Crypto {
         
         return words
     }
+
     
-//    static func encryptNostr(_ content: Data, _ password: String) -> Data? {
-//        return RNCryptor.encrypt(data: content, withPassword: password.replacingOccurrences(of: " ", with: ""))
-//    }
-//
-//    static func decryptNostr(_ content: Data, _ password: String) -> Data? {
-//        return try? RNCryptor.decrypt(data: content, withPassword: password.replacingOccurrences(of: " ", with: ""))
-//    }
-    
-    static var randomKey: String {
+    static var randomPubKey: String {
         let privateKey = try! secp256k1.KeyAgreement.PrivateKey()
-        let publicKey = privateKey.publicKey
-        return hex_encode(publicKey.dataRepresentation)//publicKey.rawRepresentation.hex
+        return privateKey.publicKey.dataRepresentation.hex
     }
     
-    static var privateKey: String {
-        return try! secp256k1.KeyAgreement.PrivateKey().rawRepresentation.hex
+    
+    static var privKeyHex: String {
+        return privKeyData().hex
     }
     
-    static func privateKeyData() -> Data {
+    
+    static func privKeyData() -> Data {
         return try! secp256k1.KeyAgreement.PrivateKey().rawRepresentation
-    }
-    
-    static func nostrPrivateKey() -> Data {
-        return try! secp256k1.KeyAgreement.PrivateKey().rawRepresentation
-    }
-    
-    static func publicKey(privKey: String) -> String {
-        let privateKey = try! secp256k1.KeyAgreement.PrivateKey(dataRepresentation: hex_decode(privKey) ?? [])
-        return hex_encode(privateKey.publicKey.dataRepresentation)
-    }
-    
-    static func hex_decode(_ str: String) -> [UInt8]? {
-        if str.count == 0 {
-            return nil
-        }
-        var ret: [UInt8] = []
-        let chars = Array(str.utf8)
-        var i: Int = 0
-        for c in zip(chars, chars[1...]) {
-            i += 1
-
-            if i % 2 == 0 {
-                continue
-            }
-
-            guard let c1 = char_to_hex(c.0) else {
-                return nil
-            }
-
-            guard let c2 = char_to_hex(c.1) else {
-                return nil
-            }
-
-            ret.append((c1 << 4) | c2)
-        }
-
-        return ret
-    }
-    
-    static func char_to_hex(_ c: UInt8) -> UInt8? {
-        // 0 && 9
-        if (c >= 48 && c <= 57) {
-            return c - 48 // 0
-        }
-        // a && f
-        if (c >= 97 && c <= 102) {
-            return c - 97 + 10;
-        }
-        // A && F
-        if (c >= 65 && c <= 70) {
-            return c - 65 + 10;
-        }
-        return nil;
     }
 }

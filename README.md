@@ -36,6 +36,7 @@ Unify is fully functional, however won't be compatible with BTCPayServer, it wil
 
 
 ## Limitations
+- Does not create/import/recover a new wallet, you must use an existing BIP84 wallet via Bitcoin Core.
 - Only works with a local node.
 - Native segwit inputs and outputs only.
 - Must have a BIP39 signer that can sign for your inputs. 
