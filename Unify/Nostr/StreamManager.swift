@@ -100,7 +100,9 @@ class StreamManager: NSObject {
     
     
     private func parseEventDict(arr: NSArray) {
-        if let dict = arr[2] as? [String:Any], let created_at = dict["created_at"] as? Int, let _ = dict["id"] as? String {
+        if let dict = arr[2] as? [String:Any], 
+            let created_at = dict["created_at"] as? Int,
+            let _ = dict["id"] as? String {
             let now = NSDate().timeIntervalSince1970
             let diff = (now - TimeInterval(created_at))
             
@@ -295,20 +297,9 @@ class StreamManager: NSObject {
         self.webSocket = nil
         self.opened = false
     }
-    
-//    func pingWebsocket() {
-//        self.webSocket?.sendPing(pongReceiveHandler: { err in
-//            if err == nil {
-//                self.pongReceivedBlock!(true)
-//            } else {
-//                self.pongReceivedBlock!(false)
-//            }
-//        })
-//    }
 }
 
 extension StreamManager: URLSessionWebSocketDelegate {
-    
     func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didOpenWithProtocol protocol: String?) {
         opened = true
         subscribe()
@@ -320,11 +311,11 @@ extension StreamManager: URLSessionWebSocketDelegate {
         opened = false
     }
     
+    
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
         if let error = error {
             closeWebSocket()
             errorReceivedBlock!(error.localizedDescription)
         }
     }
-    
 }

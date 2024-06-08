@@ -43,6 +43,7 @@
 		0A6A83E02BD95D8000A6546A /* Signer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A6A83DF2BD95D8000A6546A /* Signer.swift */; };
 		0A6A83E22BD95E8700A6546A /* SignerStruct.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A6A83E12BD95E8700A6546A /* SignerStruct.swift */; };
 		0A6A83E42BDBFD6900A6546A /* DecodedPsbt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A6A83E32BDBFD6900A6546A /* DecodedPsbt.swift */; };
+		0AA86C712C14205500D2AA0C /* EventContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AA86C702C14205500D2AA0C /* EventContent.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -95,6 +96,7 @@
 		0A6A83DF2BD95D8000A6546A /* Signer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Signer.swift; sourceTree = "<group>"; };
 		0A6A83E12BD95E8700A6546A /* SignerStruct.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignerStruct.swift; sourceTree = "<group>"; };
 		0A6A83E32BDBFD6900A6546A /* DecodedPsbt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DecodedPsbt.swift; sourceTree = "<group>"; };
+		0AA86C702C14205500D2AA0C /* EventContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventContent.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -144,6 +146,7 @@
 				0A0F188D2BA97CD800EE8168 /* Invoice.swift */,
 				0A6A83E12BD95E8700A6546A /* SignerStruct.swift */,
 				0A6A83E32BDBFD6900A6546A /* DecodedPsbt.swift */,
+				0AA86C702C14205500D2AA0C /* EventContent.swift */,
 			);
 			path = Objects;
 			sourceTree = "<group>";
@@ -310,6 +313,7 @@
 				0A56E35B2B79769B00CEC00A /* Extensions.swift in Sources */,
 				0A0F18372B7D3DC100EE8168 /* NostrResponse.swift in Sources */,
 				0A56E36A2B7BAD5500CEC00A /* RPCParams.swift in Sources */,
+				0AA86C712C14205500D2AA0C /* EventContent.swift in Sources */,
 				0A6A83E02BD95D8000A6546A /* Signer.swift in Sources */,
 				0A0F18502BA002FB00EE8168 /* NostrFilter.swift in Sources */,
 				0A56E3682B7BACA200CEC00A /* Commands.swift in Sources */,

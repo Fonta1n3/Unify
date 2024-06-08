@@ -16,7 +16,7 @@ struct ConfigView: View {
     @State private var rpcAuth = ""
     @State private var rpcWallet = ""
     @State private var rpcWallets: [String] = []
-    @State private var rpcPort = UserDefaults.standard.object(forKey: "rpcPort") as? String ?? "8332"
+    @State private var rpcPort = UserDefaults.standard.object(forKey: "rpcPort") as? String ?? "38332"
     @State private var nostrRelay = UserDefaults.standard.object(forKey: "nostrRelay") as? String ?? "wss://relay.damus.io"
     @State private var showBitcoinCoreError = false
     @State private var bitcoinCoreError = ""
@@ -30,61 +30,82 @@ struct ConfigView: View {
     
     
     var body: some View {
+        Spacer()
         Label("Configuration", systemImage: "gear")
         
         Form() {
             Section("Bitcoin Core") {
-                Label("Bitcoin Core Status", systemImage: "server.rack")
-                
                 HStack() {
+                    Label("Bitcoin Core Status", systemImage: "server.rack")
+                    
+                    Spacer()
+                    
                     Image(systemName: "circle.fill")
                         .foregroundColor(tint)
+                    
                     if bitcoinCoreConnected {
                         Text("Connected")
+                            .foregroundStyle(.secondary)
                     } else {
                         Text("Disconnected")
+                            .foregroundStyle(.secondary)
                     }
                 }
                 
                 if !bitcoinCoreConnected {
                     Text(bitcoinCoreError)
+                        .foregroundStyle(.tertiary)
                 }
             }
             
             Section("RPC Credentials") {
-                Label("RPC User", systemImage: "person.circle")
+                HStack() {
+                    Label("RPC User", systemImage: "person.circle")
+                    
+                    TextField("", text: $rpcUser)
+                        .onChange(of: rpcUser) {
+                            updateRpcUser(rpcUser: rpcUser)
+                        }
+                }
                 
-                TextField("User", text: $rpcUser)
-                    .onChange(of: rpcUser) {
-                        updateRpcUser(rpcUser: rpcUser)
-                    }
-                
-                Label("RPC Password", systemImage: "ellipsis.rectangle.fill")
-                
-                HStack {
-                    SecureField("Password", text: $rpcPassword)
+                HStack() {
+                    Label("RPC Password", systemImage: "ellipsis.rectangle.fill")
+                    
+                    SecureField("", text: $rpcPassword)
                         .onChange(of: rpcPassword) {
                             updateRpcPass(rpcPass: rpcPassword)
                         }
-                    Button("", systemImage: "arrow.clockwise") {
+                    
+                    Button {
                         rpcPassword = Crypto.privKeyHex
                         updateRpcPass(rpcPass: rpcPassword)
+                    } label: {
+                        Image(systemName: "arrow.clockwise")
                     }
                 }
                 
-                Label("RPC Authentication", systemImage: "key.horizontal.fill")
+                HStack() {
+                    Label("RPC Port", systemImage: "network")
+                    
+                    TextField("", text: $rpcPort)
+                        .onChange(of: rpcPort) {
+                            updateRpcPort()
+                        }
+                    #if os(iOS)
+                        .keyboardType(.numberPad)
+                    #endif
+                }
                 
-                CopyView(item: rpcAuth)
+                HStack() {
+                    Label("RPC Authentication", systemImage: "key.horizontal.fill")
+                    
+                    Spacer()
+                    
+                    CopyView(item: rpcAuth)
+                }
                 
-                Label("RPC Port", systemImage: "network")
-                
-                TextField("Port", text: $rpcPort)
-                    .onChange(of: rpcPort) {
-                        updateRpcPort()
-                    }
-                #if os(iOS)
-                    .keyboardType(.numberPad)
-                #endif
+                Text("Copy the rpcauth text and add it to your bitcoin.conf to authorize Unify to communicate with your node.")
+                    .foregroundStyle(.tertiary)
             }
             
             Section("RPC Wallet") {
@@ -92,6 +113,7 @@ struct ConfigView: View {
                 
                 if rpcWallets.count == 0 {
                     Text("No wallets...")
+                        .foregroundStyle(.tertiary)
                 }
                 
                 ForEach(rpcWallets, id: \.self) { wallet in
@@ -100,11 +122,13 @@ struct ConfigView: View {
                             Image(systemName: "checkmark")
                             
                             Text(wallet)
+                                .foregroundStyle(.primary)
                                 .bold()
                         }
                         
                     } else {
                         Text(wallet)
+                            .foregroundStyle(.secondary)
                             .onTapGesture {
                                 UserDefaults.standard.setValue(wallet, forKey: "walletName")
                                 rpcWallet = wallet
@@ -112,21 +136,26 @@ struct ConfigView: View {
                     }
                 }
             }
+            
             Section("Nostr Credentials") {
-                Label("Relay URL", systemImage: "server.rack")
-                
-                TextField("Relay", text: $nostrRelay)
-                    .onChange(of: nostrRelay) {
-                        updateNostrRelay()
-                    }
-                
-                Label("Private Key", systemImage: "key.horizontal.fill")
+                HStack() {
+                    Label("Relay URL", systemImage: "server.rack")
+                    
+                    TextField("", text: $nostrRelay)
+                        .onChange(of: nostrRelay) {
+                            updateNostrRelay()
+                        }
+                }
                 
                 HStack {
-                    SecureField("Private key", text: $nostrPrivkey)
-
-                    Button("", systemImage: "arrow.clockwise") {
+                    Label("Private Key", systemImage: "key.horizontal.fill")
+                    
+                    SecureField("", text: $nostrPrivkey)
+                    
+                    Button {
                         updateNostrPrivkey(nostrPrivkey: Crypto.privKeyHex)
+                    } label: {
+                        Image(systemName: "arrow.clockwise")
                     }
                 }
                 
@@ -137,25 +166,31 @@ struct ConfigView: View {
                         let keypair = Keypair(privateKey: privKey)
                         let npub = keypair!.publicKey.npub
                         
-                        Label("Public Key", systemImage: "key.horizontal")
-                        
-                        CopyView(item: npub)
+                        HStack() {
+                            Label("Public Key", systemImage: "key.horizontal")
+                            
+                            Spacer()
+                            
+                            CopyView(item: npub)
+                        }
                     }
                     
-                    Label("Peer Npub", systemImage: "person.line.dotted.person")
-                    
-                    TextField("Subscribe", text: $peerNpub)
-                        .onChange(of: peerNpub) {
-                            updateNostrPeer()
-                        }
+                    HStack() {
+                        Label("Peer Npub", systemImage: "person.line.dotted.person")
+                        
+                        TextField("", text: $peerNpub)
+                            .onChange(of: peerNpub) {
+                                updateNostrPeer()
+                            }
+                    }
                 }
             }
             
             Section("Signer") {
-                Label("BIP39 Menmonic", systemImage: "signature")
-                
                 HStack() {
-                    SecureField("BIP 39 mnemonic", text: $encSigner)
+                    Label("BIP39 Menmonic", systemImage: "signature")
+                    
+                    SecureField("", text: $encSigner)
                     
                     Button("Save") {
                         updateSigner()
@@ -163,6 +198,7 @@ struct ConfigView: View {
                 }
                 
                 Text("Your signer is encrypted before being saved.")
+                    .foregroundStyle(.tertiary)
             }
         }
         .autocorrectionDisabled()
@@ -178,7 +214,6 @@ struct ConfigView: View {
         
         .onAppear {
             setValues()
-            print("nostrPrivkey: \(nostrPrivkey)")
         }
         
         .alert(bitcoinCoreError, isPresented: $showBitcoinCoreError) {
@@ -204,7 +239,7 @@ struct ConfigView: View {
                 return
             }
             
-            self.encSigner = encSignerData.hex
+            encSigner = encSignerData.hex
         }
         
         DataManager.retrieve(entityName: "Credentials", completion: { credentials in
@@ -227,13 +262,13 @@ struct ConfigView: View {
             
             rpcPassword = rpcPass
             
-            guard let rpcUser = credentials["rpcUser"] as? String else {
+            guard let savedRpcUser = credentials["rpcUser"] as? String else {
                 return
             }
             
-            self.rpcUser = rpcUser
+            rpcUser = savedRpcUser
             
-            guard let rpcauthcreds = RPCAuth().generateCreds(username: rpcUser, password: rpcPass) else {
+            guard let rpcauthcreds = RPCAuth().generateCreds(username: savedRpcUser, password: rpcPass) else {
                 return
             }
             
@@ -247,17 +282,15 @@ struct ConfigView: View {
             nostrRelay = UserDefaults.standard.object(forKey: "nostrRelay") as? String ?? "wss://relay.damus.io"
             
             guard let encNostrPrivkey = credentials["nostrPrivkey"] as? Data else {
-                print("no nostrPrivkey")
                 return
             }
                         
             guard let nostrPrivkeyData = Crypto.decrypt(encNostrPrivkey) else {
-                print("unable to decrypt nostrPrivkey")
                 return
             }
             
-            self.nostrPrivkey = nostrPrivkeyData.hex
-            self.peerNpub = UserDefaults.standard.object(forKey: "peerNpub") as? String ?? ""
+            nostrPrivkey = nostrPrivkeyData.hex
+            peerNpub = UserDefaults.standard.object(forKey: "peerNpub") as? String ?? ""
             
             BitcoinCoreRPC.shared.btcRPC(method: .listwallets) { (response, errorDesc) in
                 guard errorDesc == nil else {
@@ -398,8 +431,11 @@ struct CopyView: View {
                 .truncationMode(.middle)
                 .lineLimit(1)
                 .multilineTextAlignment(.leading)
-            ShareLink("", item: item)
-            Button("", systemImage: "doc.on.doc") {
+                .foregroundStyle(.secondary)
+                        
+            //ShareLink(item: item)
+            
+            Button {
                 #if os(macOS)
                 NSPasteboard.general.clearContents()
                 NSPasteboard.general.setString(item, forType: .string)
@@ -407,7 +443,11 @@ struct CopyView: View {
                 UIPasteboard.general.string = item
                 #endif
                 copied = true
+                
+            } label: {
+                Image(systemName: "doc.on.doc")
             }
+            
             .alert("Copied", isPresented: $copied) {
                 Button("OK", role: .cancel) {}
             }

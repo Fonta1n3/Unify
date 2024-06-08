@@ -39,19 +39,23 @@ struct ReceiveView: View, DirectMessageEncrypting {
         
         Form() {
             Section("Create Invoice") {
-                Label("BTC Amount", systemImage: "bitcoinsign.circle")
+                HStack() {
+                    Label("BTC Amount", systemImage: "bitcoinsign.circle")
+                    
+                    TextField("", text: $amount)
+                    #if os(iOS)
+                        .keyboardType(.decimalPad)
+                    #endif
+                }
                 
-                TextField("Amount in btc", text: $amount)
-                #if os(iOS)
-                    .keyboardType(.decimalPad)
-                #endif
-                
-                Label("Recipient address", systemImage: "arrow.down.circle")
-                
-                TextField("Bitcoin address", text: $address)
-                #if os(iOS)
-                    .keyboardType(.default)
-                #endif
+                HStack() {
+                    Label("Recipient address", systemImage: "arrow.down.circle")
+                    
+                    TextField("", text: $address)
+                    #if os(iOS)
+                        .keyboardType(.default)
+                    #endif
+                }
             }
             
             if let amountDouble = Double(amount), amountDouble > 0 && address != "" {
@@ -145,14 +149,13 @@ struct ReceiveView: View, DirectMessageEncrypting {
     
     private func connectToNostr() {
         guard let payeePubkey = PublicKey(npub: payeeNpub) else {
-            print("failed getting pubkey")
             return
         }
         
         StreamManager.shared.openWebSocket(relayUrlString: urlString)
         
         StreamManager.shared.eoseReceivedBlock = { _ in
-            guard let encInvoice = encryptedMessage(ourKeypair: ourKeypair!, 
+            guard let encInvoice = encryptedMessage(ourKeypair: ourKeypair!,
                                                     receiversNpub: payeeNpub,
                                                     message: self.invoice) else {
                 return
@@ -179,7 +182,22 @@ struct ReceiveView: View, DirectMessageEncrypting {
                 return
             }
             
-            guard let psbt = try? PSBT(psbt: decryptedMessage, network: .testnet) else {
+            guard let decryptedMessageData = decryptedMessage.data(using: .utf8) else {
+                return
+            }
+            
+            guard let dictionary =  try? JSONSerialization.jsonObject(with: decryptedMessageData, options: [.allowFragments]) as? [String: Any] else {
+                print("converting to dictionary failed")
+                return
+            }
+            
+            let eventContent = EventContent(dictionary)
+            
+            guard let originalPsbtBase64 = eventContent.psbt else {
+                return
+            }
+            
+            guard let psbt = try? PSBT(psbt: originalPsbtBase64, network: .testnet) else {
                 return
             }
             
@@ -199,6 +217,7 @@ struct ReceiveView: View, DirectMessageEncrypting {
                 if output.txOutput.scriptPubKey.type == .payToWitnessPubKeyHash {
                     allOutputsSegwit = true
                 }
+                
                 if output.txOutput.address! == invoiceAddress.description {
                     ourInvoiceGetsPaid = true
                 }
@@ -412,9 +431,31 @@ struct CreateProposalView: View, DirectMessageEncrypting {
                             return
                         }
                         
+                        let unencryptedContent = [
+                            "psbt:": signedPayjoinProposal,
+                            "parameters": [
+                                "version": 1,
+                                "maxAdditionalFeeContribution": 1000,
+                                "additionalFeeOutputIndex": 0,
+                                "minFeeRate": 10,
+                                "disableOutputSubstitution": true
+                            ]
+                        ]
+                        
+                        guard let jsonData = try? JSONSerialization.data(withJSONObject: unencryptedContent, options: .prettyPrinted) else {
+                            #if DEBUG
+                            print("converting to jsonData failing...")
+                            #endif
+                            return
+                        }
+                        
+                        guard let jsonString = String(data: jsonData, encoding: .utf8) else {
+                            return
+                        }
+                        
                         guard let encPsbtProposal = encryptedMessage(ourKeypair: ourKeypair,
                                                                      receiversNpub: payeeNpub,
-                                                                     message: signedPayjoinProposal) else {
+                                                                     message: jsonString) else {
                             print("failed encrypting payjoin proposal")
                             return
                         }

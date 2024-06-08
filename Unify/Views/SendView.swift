@@ -81,6 +81,9 @@ struct SendView: View, DirectMessageEncrypting {
             }
             
             let urlString = UserDefaults.standard.string(forKey: "nostrRelay") ?? "wss://relay.damus.io"
+            
+            StreamManager.shared.closeWebSocket()
+            
             StreamManager.shared.openWebSocket(relayUrlString: urlString)
             
             StreamManager.shared.eoseReceivedBlock = { _ in }
@@ -419,9 +422,31 @@ struct SpendableUtxosView: View, DirectMessageEncrypting {
                             return
                         }
                         
-                        guard let encPsbt = encryptedMessage(ourKeypair: ourKeypair,
+                        let unencryptedContent = [
+                            "psbt:": signedPsbt,
+                            "parameters": [
+                                "version": 1,
+                                "maxAdditionalFeeContribution": 1000,
+                                "additionalFeeOutputIndex": 0,
+                                "minFeeRate": 10,
+                                "disableOutputSubstitution": true
+                            ]
+                        ]
+                        
+                        guard let jsonData = try? JSONSerialization.data(withJSONObject: unencryptedContent, options: .prettyPrinted) else {
+                            #if DEBUG
+                            print("converting to jsonData failing...")
+                            #endif
+                            return
+                        }
+                        
+                        guard let jsonString = String(data: jsonData, encoding: .utf8) else {
+                            return
+                        }
+                        
+                        guard let encEvent = encryptedMessage(ourKeypair: ourKeypair,
                                                              receiversNpub: recipientsNpub,
-                                                             message: signedPsbt) else {
+                                                             message: jsonString) else {
                             
                             return
                         }
@@ -437,7 +462,7 @@ struct SpendableUtxosView: View, DirectMessageEncrypting {
                         StreamManager.shared.openWebSocket(relayUrlString: urlString)
                         
                         StreamManager.shared.eoseReceivedBlock = { _ in
-                            StreamManager.shared.writeEvent(content: encPsbt, recipientNpub: recipientsNpub)
+                            StreamManager.shared.writeEvent(content: encEvent, recipientNpub: recipientsNpub)
                         }
                         
                         StreamManager.shared.errorReceivedBlock = { nostrError in
@@ -454,14 +479,33 @@ struct SpendableUtxosView: View, DirectMessageEncrypting {
                                 return
                             }
                             
+                            guard let pubKey = PublicKey(npub: peerNpub) else {
+                                return
+                            }
+                            
                             guard let decryptedMessage = try? decrypt(encryptedContent: response,
                                                                       privateKey: ourKeypair.privateKey,
-                                                                      publicKey: PublicKey(npub: peerNpub)!) else {
+                                                                      publicKey: pubKey) else {
                                 print("failed decrypting")
                                 return
                             }
                             
-                            if let payjoinProposal = try? PSBT(psbt: decryptedMessage, network: .testnet),
+                            guard let decryptedMessageData = decryptedMessage.data(using: .utf8) else {
+                                return
+                            }
+                            
+                            guard let dictionary =  try? JSONSerialization.jsonObject(with: decryptedMessageData, options: [.allowFragments]) as? [String: Any] else {
+                                print("converting to dictionary failed")
+                                return
+                            }
+                            
+                            let eventContent = EventContent(dictionary)
+                            
+                            guard let payjoinProposalBase64 = eventContent.psbt else {
+                                return
+                            }
+                                                        
+                            if let payjoinProposal = try? PSBT(psbt: payjoinProposalBase64, network: .testnet),
                                 let originalPsbt = try? PSBT(psbt: psbt, network: .testnet) {
                                 // now we inpsect it and sign it.
                                 // Verify that the absolute fee of the payjoin proposal is equals or higher than the original PSBT.

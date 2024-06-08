@@ -1,12 +1,21 @@
 {
   "pins" : [
     {
+      "identity" : "cryptoswift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/krzyzanowskim/CryptoSwift.git",
+      "state" : {
+        "revision" : "c9c3df6ab812de32bae61fc0cd1bf6d45170ebf0",
+        "version" : "1.8.2"
+      }
+    },
+    {
       "identity" : "nostr-sdk-ios",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/nostr-sdk/nostr-sdk-ios.git",
       "state" : {
-        "branch" : "main",
-        "revision" : "d08754d7e12b71e34157edaab8b221c385587601"
+        "revision" : "afbfc4b3c347a72f9d467a6e213d22fa66a2f63e",
+        "version" : "0.1.0"
       }
     },
     {
@@ -23,7 +32,6 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/danwood/SwiftUICoreImage.git",
       "state" : {
-        "branch" : "main",
         "revision" : "87c6dfcf6c0bd87097984348062979caab458ac3"
       }
     }
