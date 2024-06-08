@@ -35,6 +35,8 @@ struct ReceiveView: View, DirectMessageEncrypting {
     
     
     var body: some View {
+        Spacer()
+        
         Label("Receive", systemImage: "qrcode")
         
         Form() {
@@ -62,18 +64,16 @@ struct ReceiveView: View, DirectMessageEncrypting {
                 let url = "bitcoin:\($address.wrappedValue)?amount=\($amount.wrappedValue)&pj=nostr:\($npub.wrappedValue)"
                 
                 Section("Payjoin Invoice") {
-                    Label("Payjoin over Nostr Invoice", systemImage: "qrcode")
-                    
-                    QRView(url: url)
-                    
-                    Text(url)
-                        .truncationMode(.middle)
-                        .lineLimit(1)
+                        Label("Payjoin over Nostr Invoice", systemImage: "qrcode")
+                                                
+                        QRView(url: url)
                     
                     HStack {
-                        ShareLink("", item: url)
+                        Text(url)
+                            .truncationMode(.middle)
+                            .lineLimit(1)
                         
-                        Button("", systemImage: "doc.on.doc") {
+                        Button {
                             #if os(macOS)
                             NSPasteboard.general.clearContents()
                             NSPasteboard.general.setString(url, forType: .string)
@@ -82,6 +82,8 @@ struct ReceiveView: View, DirectMessageEncrypting {
                             UIPasteboard.general.string = url
                             #endif
                             showCopiedAlert = true
+                        } label: {
+                            Image(systemName: "doc.on.doc")
                         }
                     }
                 }
@@ -90,9 +92,9 @@ struct ReceiveView: View, DirectMessageEncrypting {
                 }
                 
                 Section("Request") {
-                    TextField("Payee Npub", text: $payeeNpub)
+                    TextField("Peer npub", text: $payeeNpub)
                     
-                    Button("Request") {
+                    Button("Request via nostr") {
                         if let _ = PublicKey(npub: payeeNpub) {
                             connectToNostr()
                         }
@@ -499,22 +501,22 @@ struct QRView: View {
     
     var body: some View {
         let image = generateQRCode(from: url)
-        Image(nsImage: image)
-            .resizable()
-            .scaledToFit()
-            .frame(width: 200, height: 200)
         
-        HStack {
-            ShareLink(item: Image(nsImage: image), preview: SharePreview("", image: image)) {
-                Label("Export", systemImage:  "square.and.arrow.up")
-            }
+        HStack() {
+            Image(nsImage: image)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 100, height: 100)
             
-            Button("Copy", systemImage: "doc.on.doc") {
+            Button {
                 NSPasteboard.general.clearContents()
                 NSPasteboard.general.writeObjects([image])
                 showCopiedAlert = true
+            } label: {
+                Image(systemName: "doc.on.doc")
             }
         }
+        
         .alert("Invoice copied ✓", isPresented: $showCopiedAlert) {
             Button("OK", role: .cancel) { }
         }

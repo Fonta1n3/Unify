@@ -50,6 +50,12 @@ struct ConfigView: View {
                         Text("Disconnected")
                             .foregroundStyle(.secondary)
                     }
+                    
+                    Button {
+                        setValues()
+                    } label: {
+                        Image(systemName: "arrow.clockwise")
+                    }
                 }
                 
                 if !bitcoinCoreConnected {
@@ -61,6 +67,10 @@ struct ConfigView: View {
             Section("RPC Credentials") {
                 HStack() {
                     Label("RPC User", systemImage: "person.circle")
+                        //.frame(width: 200)
+                        .frame(maxWidth: 200, alignment: .leading)
+                    
+                    Spacer()
                     
                     TextField("", text: $rpcUser)
                         .onChange(of: rpcUser) {
@@ -70,6 +80,10 @@ struct ConfigView: View {
                 
                 HStack() {
                     Label("RPC Password", systemImage: "ellipsis.rectangle.fill")
+                        //.frame(width: 200)
+                        .frame(maxWidth: 200, alignment: .leading)
+                    
+                    Spacer()
                     
                     SecureField("", text: $rpcPassword)
                         .onChange(of: rpcPassword) {
@@ -86,6 +100,10 @@ struct ConfigView: View {
                 
                 HStack() {
                     Label("RPC Port", systemImage: "network")
+                        //.frame(width: 200)
+                        .frame(maxWidth: 200, alignment: .leading)
+                    
+                    Spacer()
                     
                     TextField("", text: $rpcPort)
                         .onChange(of: rpcPort) {
@@ -98,6 +116,8 @@ struct ConfigView: View {
                 
                 HStack() {
                     Label("RPC Authentication", systemImage: "key.horizontal.fill")
+                        //.frame(width: 200)
+                        .frame(maxWidth: 200, alignment: .leading)
                     
                     Spacer()
                     
@@ -113,9 +133,10 @@ struct ConfigView: View {
                 
                 if rpcWallets.count == 0 {
                     Text("No wallets...")
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(.secondary)
                 }
                 
+                // Probably better as a dropdown menu or modal, could also call get wallet info to display wallet info.
                 ForEach(rpcWallets, id: \.self) { wallet in
                     if rpcWallet == wallet {
                         HStack {
@@ -135,11 +156,15 @@ struct ConfigView: View {
                             }
                     }
                 }
+                
+                Text("Click or tap a wallet to select it. In Fully Noded you can see the wallet filename in the Wallet Detail view. Unify works with BIP84 only for now (native segwit) as mxing input and output types is bad for privacy.")
+                    .foregroundStyle(.tertiary)
             }
             
             Section("Nostr Credentials") {
                 HStack() {
                     Label("Relay URL", systemImage: "server.rack")
+                        .frame(maxWidth: 200, alignment: .leading)
                     
                     TextField("", text: $nostrRelay)
                         .onChange(of: nostrRelay) {
@@ -149,6 +174,7 @@ struct ConfigView: View {
                 
                 HStack {
                     Label("Private Key", systemImage: "key.horizontal.fill")
+                        .frame(maxWidth: 200, alignment: .leading)
                     
                     SecureField("", text: $nostrPrivkey)
                     
@@ -168,6 +194,7 @@ struct ConfigView: View {
                         
                         HStack() {
                             Label("Public Key", systemImage: "key.horizontal")
+                                .frame(maxWidth: 200, alignment: .leading)
                             
                             Spacer()
                             
@@ -177,6 +204,7 @@ struct ConfigView: View {
                     
                     HStack() {
                         Label("Peer Npub", systemImage: "person.line.dotted.person")
+                            .frame(maxWidth: 200, alignment: .leading)
                         
                         TextField("", text: $peerNpub)
                             .onChange(of: peerNpub) {
@@ -189,6 +217,7 @@ struct ConfigView: View {
             Section("Signer") {
                 HStack() {
                     Label("BIP39 Menmonic", systemImage: "signature")
+                        .frame(maxWidth: 200, alignment: .leading)
                     
                     SecureField("", text: $encSigner)
                     

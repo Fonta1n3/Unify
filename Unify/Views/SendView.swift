@@ -20,18 +20,23 @@ struct SendView: View, DirectMessageEncrypting {
     
     var body: some View {
         Spacer()
+        
         Label("Send", systemImage: "bitcoinsign")
+        
         Form() {
             if !invoiceUploaded {
                 Section("Invoice") {
                     UploadInvoiceView(uploadedInvoice: $uploadedInvoice, invoiceUploaded: $invoiceUploaded)
                 }
+                
             } else {
                     Section("Invoice") {
                         if let uploadedInvoice = uploadedInvoice {
                             Label("Address: \(uploadedInvoice.address!)", systemImage: "qrcode")
+                            
                             Label("Amount: \(uploadedInvoice.amount!) btc", systemImage: "bitcoinsign")
                         }
+                        
                         Button("Clear") {
                             uploadedInvoice = nil
                             invoiceUploaded = false
@@ -41,6 +46,7 @@ struct SendView: View, DirectMessageEncrypting {
             }
             if showUtxos {
                 SpendableUtxosView(utxos: utxos, uploadedInvoice: uploadedInvoice)
+                
             } else {
                 Section("UTXOs") {
                     Text("No spendable utxos.")
@@ -185,9 +191,11 @@ struct UploadInvoiceView: View {
             }
             #endif
             
-            Button("Paste", systemImage: "doc.on.clipboard") {
+            Button {
                 uploadedInvoice = handlePaste()
                 invoiceUploaded = true
+            } label: {
+                Image(systemName: "doc.on.clipboard")
             }
         }
         .buttonStyle(.bordered)
@@ -292,14 +300,21 @@ struct SpendableUtxosView: View, DirectMessageEncrypting {
     }
     
     var body: some View {
+        Section("Total Spendable Balance") {
+            Text(spendableBalance.btcBalanceWithSpaces)
+                .foregroundStyle(.secondary)
+        }
+        
         Section("Spendable UTXOs") {
             ForEach(Array(utxos.enumerated()), id: \.offset) { (index, utxo) in
                 if let address = utxo.address, let amount = utxo.amount,
                     let confs = utxo.confs, confs > 0 {
-                    let textLabel = address + ": " + "\(amount)" + " btc"
+                    let formattedAmount = amount.btcBalanceWithSpaces
+                    let textLabel = address + ": " + "\(formattedAmount)"
                     
                     HStack {
                         Text(textLabel)
+                            .foregroundStyle(.secondary)
                         if let uploadedInvoice = uploadedInvoice {
                             Button("Pay Join this UTXO") {
                                 payInvoice(invoice: uploadedInvoice, utxo: utxo, utxos: utxos)
@@ -314,10 +329,9 @@ struct SpendableUtxosView: View, DirectMessageEncrypting {
                     }
                 }
             }
-        }
-        
-        Section("Total Spendable Balance") {
-            Text("\(spendableBalance) btc")
+            
+            Text("Once an invoice is uploaded or received you will see a button which prompts you to select a specific utxo to pay the invoice with.")
+                .foregroundStyle(.tertiary)
         }
         
         if let signedRawTx = signedRawTx {
