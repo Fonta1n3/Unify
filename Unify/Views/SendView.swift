@@ -21,7 +21,7 @@ struct SendView: View, DirectMessageEncrypting {
     var body: some View {
         Spacer()
         
-        Label("Send", systemImage: "bitcoinsign")
+        Label("Send", systemImage: "arrow.up.forward.circle")
         
         Form() {
             if !invoiceUploaded {
@@ -32,9 +32,9 @@ struct SendView: View, DirectMessageEncrypting {
             } else {
                     Section("Invoice") {
                         if let uploadedInvoice = uploadedInvoice {
-                            Label("Address: \(uploadedInvoice.address!)", systemImage: "qrcode")
+                            Label("\(uploadedInvoice.address!)", systemImage: "arrow.up.forward.circle")
                             
-                            Label("Amount: \(uploadedInvoice.amount!) btc", systemImage: "bitcoinsign")
+                            Label(uploadedInvoice.amount!.btcBalanceWithSpaces, systemImage: "bitcoinsign.circle")
                         }
                         
                         Button("Clear") {
@@ -183,8 +183,10 @@ struct UploadInvoiceView: View {
                 }
             #if os(iOS)
             // Can't scan QR on macOS with SwiftUI...
-            Button("Scan QR", systemImage: "qrcode.viewfinder") {
+            Button {
                 isShowingScanner = true
+            } label: {
+                Image(systemName: "qrcode.viewfinder")
             }
             .sheet(isPresented: $isShowingScanner) {
                 CodeScannerView(codeTypes: [.qr], simulatedData: "", completion: handleScan)
@@ -199,6 +201,11 @@ struct UploadInvoiceView: View {
             }
         }
         .buttonStyle(.bordered)
+        
+        Text("Select a method to upload an invoice, if the Sender opts to request via Nostr (to your npub) this will happen automatically.")
+            .foregroundStyle(.tertiary)
+        
+        
     }
     
 #if os(iOS)
@@ -316,7 +323,7 @@ struct SpendableUtxosView: View, DirectMessageEncrypting {
                         Text(textLabel)
                             .foregroundStyle(.secondary)
                         if let uploadedInvoice = uploadedInvoice {
-                            Button("Pay Join this UTXO") {
+                            Button("Payjoin this UTXO") {
                                 payInvoice(invoice: uploadedInvoice, utxo: utxo, utxos: utxos)
                             }
                             .buttonStyle(.bordered)

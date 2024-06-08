@@ -480,7 +480,7 @@
 				ENABLE_PREVIEWS = YES;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "Unify Wallet";
+				INFOPLIST_KEY_CFBundleDisplayName = Unify;
 				INFOPLIST_KEY_NSCameraUsageDescription = "To scan an invoice in the form of a QR code.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -515,7 +515,7 @@
 				ENABLE_PREVIEWS = YES;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "Unify Wallet";
+				INFOPLIST_KEY_CFBundleDisplayName = Unify;
 				INFOPLIST_KEY_NSCameraUsageDescription = "To scan an invoice in the form of a QR code.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;

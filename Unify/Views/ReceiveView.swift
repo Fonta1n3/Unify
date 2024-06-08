@@ -22,7 +22,7 @@ struct ReceiveView: View, DirectMessageEncrypting {
     @State private var address = ""
     @State private var npub = ""
     @State private var showCopiedAlert = false
-    @State private var payeeNpub = UserDefaults.standard.object(forKey: "peerNpub") as? String ?? ""
+    @State private var peerNpub = UserDefaults.standard.object(forKey: "peerNpub") as? String ?? ""
     @State private var ourKeypair: Keypair?
     @State private var invoice = ""
     @State private var utxosToPotentiallyConsume: [Utxo] = []
@@ -37,7 +37,7 @@ struct ReceiveView: View, DirectMessageEncrypting {
     var body: some View {
         Spacer()
         
-        Label("Receive", systemImage: "qrcode")
+        Label("Receive", systemImage: "arrow.down.forward.circle")
         
         Form() {
             Section("Create Invoice") {
@@ -51,7 +51,7 @@ struct ReceiveView: View, DirectMessageEncrypting {
                 }
                 
                 HStack() {
-                    Label("Recipient address", systemImage: "arrow.down.circle")
+                    Label("Recipient address", systemImage: "arrow.down.forward.circle")
                     
                     TextField("", text: $address)
                     #if os(iOS)
@@ -92,14 +92,14 @@ struct ReceiveView: View, DirectMessageEncrypting {
                 }
                 
                 Section("Request") {
-                    TextField("Peer npub", text: $payeeNpub)
+                    TextField("Peer npub", text: $peerNpub)
                     
                     Button("Request via nostr") {
-                        if let _ = PublicKey(npub: payeeNpub) {
+                        if let _ = PublicKey(npub: peerNpub) {
                             connectToNostr()
                         }
                     }
-                    .disabled(PublicKey(npub: payeeNpub) == nil)
+                    .disabled(PublicKey(npub: peerNpub) == nil)
                 }
                 
                 if showUtxosView, let originalPsbt = originalPsbt {
@@ -107,7 +107,7 @@ struct ReceiveView: View, DirectMessageEncrypting {
                             UtxosSelectionView(utxos: utxosToPotentiallyConsume, 
                                                originalPsbt: originalPsbt,
                                                ourKeypair: ourKeypair!,
-                                               payeeNpub: payeeNpub,
+                                               payeeNpub: peerNpub,
                                                utxoToConsume: $utxoToConsume,
                                                showAddOutputView: $showAddOutputView)
                         
@@ -118,7 +118,7 @@ struct ReceiveView: View, DirectMessageEncrypting {
                             AddOutputView(utxo: utxoToConsume, 
                                           originalPsbt: originalPsbt,
                                           ourKeypair: ourKeypair!,
-                                          payeeNpub: payeeNpub)
+                                          payeeNpub: peerNpub)
                         }
                     }
                 }
@@ -132,6 +132,8 @@ struct ReceiveView: View, DirectMessageEncrypting {
         .padding(EdgeInsets(top: 12, leading: 12, bottom: 12, trailing: 12))
         .onAppear {
             fetchAddress()
+            
+            peerNpub = UserDefaults.standard.object(forKey: "peerNpub") as? String ?? ""
             
             DataManager.retrieve(entityName: "Credentials") { dict in
                 guard let dict = dict, let encPrivKey = dict["nostrPrivkey"] as? Data else {
@@ -150,7 +152,7 @@ struct ReceiveView: View, DirectMessageEncrypting {
     }
     
     private func connectToNostr() {
-        guard let payeePubkey = PublicKey(npub: payeeNpub) else {
+        guard let payeePubkey = PublicKey(npub: peerNpub) else {
             return
         }
         
@@ -158,13 +160,13 @@ struct ReceiveView: View, DirectMessageEncrypting {
         
         StreamManager.shared.eoseReceivedBlock = { _ in
             guard let encInvoice = encryptedMessage(ourKeypair: ourKeypair!,
-                                                    receiversNpub: payeeNpub,
+                                                    receiversNpub: peerNpub,
                                                     message: self.invoice) else {
                 return
             }
             
             StreamManager.shared.writeEvent(content: encInvoice,
-                                            recipientNpub: payeeNpub)
+                                            recipientNpub: peerNpub)
         }
         
         StreamManager.shared.errorReceivedBlock = { nostrError in

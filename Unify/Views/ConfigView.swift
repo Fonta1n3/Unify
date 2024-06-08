@@ -411,15 +411,16 @@ struct ConfigView: View {
     
     
     private func updateNostrPeer() {
-        guard let npub = PublicKey(npub: peerNpub) else {
+        guard let _ = PublicKey(npub: peerNpub) else {
             return
         }
         
-        UserDefaults.standard.setValue(npub, forKey: "peerNpub")
+        UserDefaults.standard.setValue(peerNpub, forKey: "peerNpub")
     }
     
     
     private func updateSigner() {
+        // Display an alert that its valid and saved
         let words = encSigner.components(separatedBy: " ")
         var wordsNoSpaces: [String] = []
         
