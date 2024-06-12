@@ -22,7 +22,7 @@ struct ReceiveView: View, DirectMessageEncrypting {
     @State private var address = ""
     @State private var npub = ""
     @State private var showCopiedAlert = false
-    @State private var peerNpub = UserDefaults.standard.object(forKey: "peerNpub") as? String ?? ""
+    @State private var peerNpub = ""
     @State private var ourKeypair: Keypair?
     @State private var invoice = ""
     @State private var utxosToPotentiallyConsume: [Utxo] = []
@@ -43,6 +43,9 @@ struct ReceiveView: View, DirectMessageEncrypting {
             Section("Create Invoice") {
                 HStack() {
                     Label("BTC Amount", systemImage: "bitcoinsign.circle")
+                        .frame(maxWidth: 200, alignment: .leading)
+                    
+                    Spacer()
                     
                     TextField("", text: $amount)
                     #if os(iOS)
@@ -52,6 +55,9 @@ struct ReceiveView: View, DirectMessageEncrypting {
                 
                 HStack() {
                     Label("Recipient address", systemImage: "arrow.down.forward.circle")
+                        .frame(maxWidth: 200, alignment: .leading)
+                    
+                    Spacer()
                     
                     TextField("", text: $address)
                     #if os(iOS)
@@ -60,7 +66,7 @@ struct ReceiveView: View, DirectMessageEncrypting {
                 }
             }
             
-            if let amountDouble = Double(amount), amountDouble > 0 && address != "" {
+            if let amountDouble = Double(amount), amountDouble > 0 && address != "" {                
                 let url = "bitcoin:\($address.wrappedValue)?amount=\($amount.wrappedValue)&pj=nostr:\($npub.wrappedValue)"
                 
                 Section("Payjoin Invoice") {
@@ -82,6 +88,7 @@ struct ReceiveView: View, DirectMessageEncrypting {
                             UIPasteboard.general.string = url
                             #endif
                             showCopiedAlert = true
+                            
                         } label: {
                             Image(systemName: "doc.on.doc")
                         }
@@ -89,17 +96,6 @@ struct ReceiveView: View, DirectMessageEncrypting {
                 }
                 .onAppear {
                     invoice = url
-                }
-                
-                Section("Request") {
-                    TextField("Peer npub", text: $peerNpub)
-                    
-                    Button("Request via nostr") {
-                        if let _ = PublicKey(npub: peerNpub) {
-                            connectToNostr()
-                        }
-                    }
-                    .disabled(PublicKey(npub: peerNpub) == nil)
                 }
                 
                 if showUtxosView, let originalPsbt = originalPsbt {
@@ -133,18 +129,18 @@ struct ReceiveView: View, DirectMessageEncrypting {
         .onAppear {
             fetchAddress()
             
-            peerNpub = UserDefaults.standard.object(forKey: "peerNpub") as? String ?? ""
-            
-            DataManager.retrieve(entityName: "Credentials") { dict in
-                guard let dict = dict, let encPrivKey = dict["nostrPrivkey"] as? Data else {
-                    return
-                }
-                
-                guard let decPrivkey = Crypto.decrypt(encPrivKey) else { return }
-                
-                ourKeypair = Keypair(privateKey: PrivateKey(dataRepresentation: decPrivkey)!)!
-                npub = ourKeypair!.publicKey.npub
+            guard let keypair = Keypair() else {
+                return
             }
+            
+            ourKeypair = keypair
+            npub = ourKeypair!.publicKey.npub
+            
+            guard let recipientsPubkey = PublicKey(npub: npub) else {
+                return
+            }
+            
+            connectToNostr()
         }
         .alert("Invoice copied ✓", isPresented: $showCopiedAlert) {
             Button("OK", role: .cancel) { }
@@ -152,41 +148,39 @@ struct ReceiveView: View, DirectMessageEncrypting {
     }
     
     private func connectToNostr() {
-        guard let payeePubkey = PublicKey(npub: peerNpub) else {
-            return
-        }
+        StreamManager.shared.openWebSocket(relayUrlString: urlString, peerNpub: nil, p: ourKeypair!.publicKey.hex)
         
-        StreamManager.shared.openWebSocket(relayUrlString: urlString)
-        
-        StreamManager.shared.eoseReceivedBlock = { _ in
-            guard let encInvoice = encryptedMessage(ourKeypair: ourKeypair!,
-                                                    receiversNpub: peerNpub,
-                                                    message: self.invoice) else {
-                return
-            }
-            
-            StreamManager.shared.writeEvent(content: encInvoice,
-                                            recipientNpub: peerNpub)
-        }
+        StreamManager.shared.eoseReceivedBlock = { _ in }
         
         StreamManager.shared.errorReceivedBlock = { nostrError in
             print("nostr received error: \(nostrError)")
         }
         
         StreamManager.shared.onDoneBlock = { nostrResponse in
-            guard let response = nostrResponse.response as? String else {
+            guard let content = nostrResponse.content else {
                 print("nostr response error: \(nostrResponse.errorDesc ?? "unknown error")")
                 return
             }
             
-            guard let decryptedMessage = try? decrypt(encryptedContent: response,
+            guard let payeePubkeyHex = nostrResponse.pubkey else {
+                return
+            }
+            
+            guard let payeePubkey = PublicKey(hex: payeePubkeyHex) else {
+                return
+            }
+            
+            peerNpub = payeePubkey.npub
+            
+            guard let decryptedMessage = try? decrypt(encryptedContent: content,
                                                       privateKey: ourKeypair!.privateKey,
                                                       publicKey: payeePubkey) else {
                 print("failed decrypting")
                 return
             }
-            
+                        
             guard let decryptedMessageData = decryptedMessage.data(using: .utf8) else {
+                print("failed decrypting message data")
                 return
             }
             
@@ -322,9 +316,9 @@ struct UtxosSelectionView: View {
                                   utxoToConsume: $utxoToConsume,
                                   showAddOutputView: $showAddOutputView)
             }
-            
+            Text("Tap or click a utxo to add it as an additional input.")
+                .foregroundStyle(.tertiary)
         }
-        .frame(minHeight: CGFloat(utxos.count) * 40)
     }
 }
 
@@ -337,21 +331,28 @@ struct UtxoSelectionCell: View {
     
     var body: some View {
         HStack {
-            Text(utxo.address! + ":" + utxo.amount!.description)
-                .bold(utxo == selectedUtxo)
-            
-            Spacer()
+            let utxoString = utxo.address! + "\n" + utxo.amount!.btcBalanceWithSpaces
             
             if utxo == selectedUtxo {
+                Text(utxoString)
+                    .foregroundStyle(.primary)
+                    .bold(true)
+                
+                Spacer()
+                
                 Image(systemName: "checkmark")
                     .foregroundColor(.accentColor)
+                
+            } else {
+                Text(utxoString)
+                    .foregroundStyle(.secondary)
+                    .bold(false)
             }
         }
         .onTapGesture {
             self.selectedUtxo = self.utxo
             self.utxoToConsume = self.utxo
             self.showAddOutputView = true
-            
         }
     }
 }
@@ -366,17 +367,37 @@ struct AddOutputView: View {
     let payeeNpub: String
     
     var body: some View {
-        TextField("Address", text: $additionalOutputAddress)
-        
-        TextField("Amount", text: $additionalOutputAmount)
+         HStack() {
+             Label("Amount", systemImage: "bitcoinsign.circle")
+                 .frame(maxWidth: 200, alignment: .leading)
+             
+             Spacer()
+             
+             TextField("", text: $additionalOutputAmount)
+             #if os(iOS)
+                 .keyboardType(.decimalPad)
+             #endif
+         }
+         
+         HStack() {
+             Label("Address", systemImage: "arrow.down.forward.circle")
+                 .frame(maxWidth: 200, alignment: .leading)
+             
+             Spacer()
+             
+             TextField("", text: $additionalOutputAddress)
+             #if os(iOS)
+                 .keyboardType(.default)
+             #endif
+         }
         
         if additionalOutputAmount != "", additionalOutputAmount != "" {
-            CreateProposalView(utxo: utxo, 
-                               originalPsbt: originalPsbt,
-                               ourKeypair: ourKeypair,
-                               payeeNpub: payeeNpub,
-                               additionalOutputAddress: additionalOutputAddress,
-                               additionalOutputAmount: additionalOutputAmount)
+                CreateProposalView(utxo: utxo,
+                                   originalPsbt: originalPsbt,
+                                   ourKeypair: ourKeypair,
+                                   payeeNpub: payeeNpub,
+                                   additionalOutputAddress: additionalOutputAddress,
+                                   additionalOutputAmount: additionalOutputAmount)
         }
     }
 }
@@ -436,7 +457,7 @@ struct CreateProposalView: View, DirectMessageEncrypting {
                         }
                         
                         let unencryptedContent = [
-                            "psbt:": signedPayjoinProposal,
+                            "psbt": signedPayjoinProposal,
                             "parameters": [
                                 "version": 1,
                                 "maxAdditionalFeeContribution": 1000,
@@ -464,7 +485,7 @@ struct CreateProposalView: View, DirectMessageEncrypting {
                             return
                         }
                         
-                        StreamManager.shared.writeEvent(content: encPsbtProposal, recipientNpub: payeeNpub)
+                        StreamManager.shared.writeEvent(content: encPsbtProposal, recipientNpub: payeeNpub, ourKeypair: ourKeypair)
                     }
                 }
             }

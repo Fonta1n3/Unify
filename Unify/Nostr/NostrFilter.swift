@@ -41,6 +41,10 @@ struct NostrFilter: Codable {
     public static var filter_text: NostrFilter {
         return filter_kinds([1])
     }
+    
+    public static func filter_pubkeys(_ pubkeys: [String]) -> NostrFilter {
+        return NostrFilter(ids: nil, kinds: nil, referenced_ids: nil, pubkeys: pubkeys, since: nil, until: nil, authors: nil)
+    }
 
     public static var filter_profiles: NostrFilter {
         return filter_kinds([0])

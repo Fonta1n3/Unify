@@ -22,8 +22,6 @@ struct ConfigView: View {
     @State private var bitcoinCoreError = ""
     @State private var showNoCredsError = false
     @State private var showInvalidSignerError = false
-    @State private var peerNpub = UserDefaults.standard.object(forKey: "peerNpub") as? String ?? ""
-    @State private var nostrPrivkey = ""
     @State private var encSigner = ""
     @State private var bitcoinCoreConnected = false
     @State private var tint: Color = .red
@@ -67,7 +65,6 @@ struct ConfigView: View {
             Section("RPC Credentials") {
                 HStack() {
                     Label("RPC User", systemImage: "person.circle")
-                        //.frame(width: 200)
                         .frame(maxWidth: 200, alignment: .leading)
                     
                     Spacer()
@@ -80,7 +77,6 @@ struct ConfigView: View {
                 
                 HStack() {
                     Label("RPC Password", systemImage: "ellipsis.rectangle.fill")
-                        //.frame(width: 200)
                         .frame(maxWidth: 200, alignment: .leading)
                     
                     Spacer()
@@ -100,7 +96,6 @@ struct ConfigView: View {
                 
                 HStack() {
                     Label("RPC Port", systemImage: "network")
-                        //.frame(width: 200)
                         .frame(maxWidth: 200, alignment: .leading)
                     
                     Spacer()
@@ -116,7 +111,6 @@ struct ConfigView: View {
                 
                 HStack() {
                     Label("RPC Authentication", systemImage: "key.horizontal.fill")
-                        //.frame(width: 200)
                         .frame(maxWidth: 200, alignment: .leading)
                     
                     Spacer()
@@ -161,7 +155,7 @@ struct ConfigView: View {
                     .foregroundStyle(.tertiary)
             }
             
-            Section("Nostr Credentials") {
+            Section("Nostr") {
                 HStack() {
                     Label("Relay URL", systemImage: "server.rack")
                         .frame(maxWidth: 200, alignment: .leading)
@@ -170,47 +164,6 @@ struct ConfigView: View {
                         .onChange(of: nostrRelay) {
                             updateNostrRelay()
                         }
-                }
-                
-                HStack {
-                    Label("Private Key", systemImage: "key.horizontal.fill")
-                        .frame(maxWidth: 200, alignment: .leading)
-                    
-                    SecureField("", text: $nostrPrivkey)
-                    
-                    Button {
-                        updateNostrPrivkey(nostrPrivkey: Crypto.privKeyHex)
-                    } label: {
-                        Image(systemName: "arrow.clockwise")
-                    }
-                }
-                
-                if nostrPrivkey != "" {
-                    let privKey = PrivateKey(hex: nostrPrivkey)
-                    
-                    if let privKey = privKey {
-                        let keypair = Keypair(privateKey: privKey)
-                        let npub = keypair!.publicKey.npub
-                        
-                        HStack() {
-                            Label("Public Key", systemImage: "key.horizontal")
-                                .frame(maxWidth: 200, alignment: .leading)
-                            
-                            Spacer()
-                            
-                            CopyView(item: npub)
-                        }
-                    }
-                    
-                    HStack() {
-                        Label("Peer Npub", systemImage: "person.line.dotted.person")
-                            .frame(maxWidth: 200, alignment: .leading)
-                        
-                        TextField("", text: $peerNpub)
-                            .onChange(of: peerNpub) {
-                                updateNostrPeer()
-                            }
-                    }
                 }
             }
             
@@ -310,17 +263,6 @@ struct ConfigView: View {
             rpcPort = UserDefaults.standard.object(forKey: "rpcPort") as? String ?? "8332"
             nostrRelay = UserDefaults.standard.object(forKey: "nostrRelay") as? String ?? "wss://relay.damus.io"
             
-            guard let encNostrPrivkey = credentials["nostrPrivkey"] as? Data else {
-                return
-            }
-                        
-            guard let nostrPrivkeyData = Crypto.decrypt(encNostrPrivkey) else {
-                return
-            }
-            
-            nostrPrivkey = nostrPrivkeyData.hex
-            peerNpub = UserDefaults.standard.object(forKey: "peerNpub") as? String ?? ""
-            
             BitcoinCoreRPC.shared.btcRPC(method: .listwallets) { (response, errorDesc) in
                 guard errorDesc == nil else {
                     bitcoinCoreError = errorDesc!
@@ -374,23 +316,6 @@ struct ConfigView: View {
     }
     
     
-    private func updateNostrPrivkey(nostrPrivkey: String) {
-        guard let nostrPrivkeyData = nostrPrivkey.data(using: .utf8) else {
-            return
-        }
-        
-        guard let encryptedNostrPrivkey = Crypto.encrypt(nostrPrivkeyData) else {
-            return
-        }
-        
-        DataManager.update(entityName: "Credentials", keyToUpdate: "nostrPrivkey", newValue: encryptedNostrPrivkey) { updated in
-            if updated {
-                self.nostrPrivkey = nostrPrivkey
-            }
-        }
-    }
-    
-    
     private func updateRpcAuth() {
         guard let rpcauthcreds = RPCAuth().generateCreds(username: rpcUser, password: rpcPassword) else {
             return
@@ -407,15 +332,6 @@ struct ConfigView: View {
     
     private func updateNostrRelay() {
         UserDefaults.standard.setValue(nostrRelay, forKey: "nostrRelay")
-    }
-    
-    
-    private func updateNostrPeer() {
-        guard let _ = PublicKey(npub: peerNpub) else {
-            return
-        }
-        
-        UserDefaults.standard.setValue(peerNpub, forKey: "peerNpub")
     }
     
     
@@ -462,9 +378,7 @@ struct CopyView: View {
                 .lineLimit(1)
                 .multilineTextAlignment(.leading)
                 .foregroundStyle(.secondary)
-                        
-            //ShareLink(item: item)
-            
+                                    
             Button {
                 #if os(macOS)
                 NSPasteboard.general.clearContents()

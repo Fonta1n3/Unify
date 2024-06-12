@@ -22,7 +22,7 @@ public struct Utxo: CustomStringConvertible, Hashable, Identifiable {
     let confs: Int64?
 //    let safe: Bool?
 //    let spendable: Bool?
-//    var isSelected: Bool
+    var isSelected: Bool
 //    let reused: Bool?
 //    //let capGain:String?
 //    //let originValue:String?
@@ -49,7 +49,7 @@ public struct Utxo: CustomStringConvertible, Hashable, Identifiable {
         confs = dictionary["confirmations"] as? Int64
         //spendable = dictionary["spendable"] as? Bool
         //safe = dictionary["safe"] as? Bool
-        //isSelected = dictionary["isSelected"] as? Bool ?? false
+        isSelected = dictionary["isSelected"] as? Bool ?? false
         //reused = dictionary["reused"] as? Bool
         //capGain = dictionary["capGain"] as? String
         //originValue = dictionary["originValue"] as? String

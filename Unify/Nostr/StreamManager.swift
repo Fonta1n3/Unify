@@ -16,10 +16,12 @@ class StreamManager: NSObject {
     var eoseReceivedBlock: (((Bool)) -> Void)?
     var errorReceivedBlock: (((String)) -> Void)?
     var pongReceivedBlock: (((Bool)) -> Void)?
-    var onDoneBlock: (((response: Any?, errorDesc: String?)) -> Void)?
+    var onDoneBlock: (((content: String?, pubkey: String?, errorDesc: String?)) -> Void)?
     let subId = Crypto.randomPubKey
     var connected = false
     var timer = Timer()
+    var peerNpub: String?
+    var p: String?
     
     
     private override init() {}
@@ -54,8 +56,7 @@ class StreamManager: NSObject {
         case .string(let strMessgae):
             let data = strMessgae.data(using: .utf8)!
             do {
-                if let jsonArray = try JSONSerialization.jsonObject(with: data, options : .allowFragments) as? NSArray
-                {
+                if let jsonArray = try JSONSerialization.jsonObject(with: data, options : .allowFragments) as? NSArray {
                     #if DEBUG
                     print("received: \(strMessgae)")
                     #endif
@@ -65,7 +66,7 @@ class StreamManager: NSObject {
                     case "EVENT":
                         parseEventDict(arr: jsonArray)
                     case "OK":
-                        onDoneBlock!((nil, jsonArray[3] as? String))
+                        onDoneBlock!((nil, nil, jsonArray[3] as? String))
                     case "NOTICE":
                         guard let noticeDesc = jsonArray[1] as? String else { return }
                         errorReceivedBlock!(noticeDesc)
@@ -106,20 +107,20 @@ class StreamManager: NSObject {
             let now = NSDate().timeIntervalSince1970
             let diff = (now - TimeInterval(created_at))
             
-            guard diff < 5.0 else { print("diff > 5, ignoring.")
+            guard diff < 60.0 else { print("diff > 60, ignoring.")
                 return
             }
             
             guard let ev = self.parseEvent(event: dict) else {
-                self.onDoneBlock!((nil,"Nostr event parsing failed..."))
+                self.onDoneBlock!((nil, nil, "Nostr event parsing failed..."))
                 #if DEBUG
                 print("event parsing failed")
                 #endif
                 return
             }
-            // decrypt and sort here, return psbt type so we know how to handle it?
-            onDoneBlock!((ev.content, nil))
-        }        
+            
+            onDoneBlock!((ev.content, ev.pubkey, nil))
+        }
     }
     
     
@@ -135,9 +136,8 @@ class StreamManager: NSObject {
     }
     
     
-    func subscribe() {
-        if let peerNpub = UserDefaults.standard.object(forKey: "peerNpub") as? String,
-            let publicKey = PublicKey(npub: peerNpub) {
+    func subscribe(peerNpub: String) {
+        if let publicKey = PublicKey(npub: peerNpub) {
             let filter: NostrFilter = NostrFilter.filter_authors([publicKey.hex])
             let encoder = JSONEncoder()
             var req = "[\"REQ\",\"\(self.subId)\","
@@ -157,58 +157,51 @@ class StreamManager: NSObject {
     }
     
     
-    public func writeEvent(content: String, recipientNpub: String) {
-        DataManager.retrieve(entityName: "Credentials") { dict in
-            guard let dict = dict, let encNostrPrivkey = dict["nostrPrivkey"] as? Data else {
-                return
-            }
-            
-            guard let decPrivkey = Crypto.decrypt(encNostrPrivkey) else {
-                return
-            }
-            
-            guard let keypair = Keypair(privateKey: PrivateKey(dataRepresentation: decPrivkey)!) else {
-                return
-            }
-            
-            let pubkey = keypair.publicKey.hex
-            let privkey = decPrivkey
-            let recipientPubkey = PublicKey(npub: recipientNpub)!
-            
-            let ev = NostrEvent(content: content,
-                                pubkey: pubkey,
-                                kind: 4,
-                                tags: [["p, \(recipientPubkey.hex)"]])
-            
-            ev.calculate_id()
-            ev.sign(privkey: privkey)
-            
-            guard !ev.too_big else {
-                self.onDoneBlock!((nil, "Nostr event is too big to send..."))
-                #if DEBUG
-                print("event too big: \(content.count)")
-                #endif
-                return
-            }
-            
-            guard ev.validity == .ok else {
-                self.onDoneBlock!((nil, "Nostr event is invalid!"))
-                #if DEBUG
-                print("event invalid")
-                #endif
-                return
-            }
-            
-            let encoder = JSONEncoder()
-            let event_data = try! encoder.encode(ev)
-            let event = String(decoding: event_data, as: UTF8.self)
-            let encoded = "[\"EVENT\",\(event)]"
-            self.sendMsg(string: encoded)
+    func subscribeToP(p: String) {
+        var req = "[\"REQ\",\"\(self.subId)\",{\"#p\":[\"\(p)\"]}]"
+        self.sendMsg(string: req)
+    }
+    
+    
+    public func writeEvent(content: String, recipientNpub: String, ourKeypair: Keypair) {
+        let pubkey = ourKeypair.publicKey.hex
+        let privkey = ourKeypair.privateKey.dataRepresentation
+        let recipientPubkey = PublicKey(npub: recipientNpub)!
+        
+        let ev = NostrEvent(content: content,
+                            pubkey: pubkey,
+                            kind: 4,
+                            tags: [["p", "\(recipientPubkey.hex)"]])
+        
+        ev.calculate_id()
+        ev.sign(privkey: privkey)
+        
+        guard !ev.too_big else {
+            self.onDoneBlock!((nil, nil, "Nostr event is too big to send..."))
+            #if DEBUG
+            print("event too big: \(content.count)")
+            #endif
+            return
         }
+        
+        guard ev.validity == .ok else {
+            self.onDoneBlock!((nil, nil, "Nostr event is invalid!"))
+            #if DEBUG
+            print("event invalid")
+            #endif
+            return
+        }
+        
+        let encoder = JSONEncoder()
+        let event_data = try! encoder.encode(ev)
+        let event = String(decoding: event_data, as: UTF8.self)
+        let encoded = "[\"EVENT\",\(event)]"
+        self.sendMsg(string: encoded)
     }
     
     
     private func sendMsg(string: String) {
+        print("sendMsg: \(string)")
         let msg:URLSessionWebSocketTask.Message = .string(string)
         
         guard let ws = self.webSocket else { print("no websocket");
@@ -247,7 +240,7 @@ class StreamManager: NSObject {
             return nil
         }
         
-        guard let kind = event["kind"] as? Int else {
+        guard let kind = event["kind"] as? Int, kind == 4 else {
             return nil
         }
         
@@ -277,12 +270,15 @@ class StreamManager: NSObject {
     private func updateCounting(seconds: Int) {
         if seconds == 30 {
             self.timer.invalidate()
-            self.onDoneBlock!((nil, "Timed out after \(seconds) seconds, no response from your nostr relay..."))
+            self.onDoneBlock!((nil, nil, "Timed out after \(seconds) seconds, no response from your nostr relay..."))
         }
     }
     
     
-    func openWebSocket(relayUrlString: String) {
+    func openWebSocket(relayUrlString: String, peerNpub: String?, p: String?) {
+        self.p = p
+        self.peerNpub = peerNpub
+        
         if let url = URL(string: relayUrlString) {
             let request = URLRequest(url: url)
             let session = URLSession(configuration: .default, delegate: self, delegateQueue: nil)
@@ -302,7 +298,14 @@ class StreamManager: NSObject {
 extension StreamManager: URLSessionWebSocketDelegate {
     func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didOpenWithProtocol protocol: String?) {
         opened = true
-        subscribe()
+        
+        if let peerNpub = self.peerNpub {
+            subscribe(peerNpub: peerNpub)
+        }
+        
+        if let p = self.p {
+            subscribeToP(p: p)
+        }
     }
     
     

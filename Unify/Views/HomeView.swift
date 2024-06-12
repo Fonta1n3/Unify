@@ -35,19 +35,8 @@ struct HomeView: View {
                     showNotSavedAlert = true
                     return
                 }
-                
-                guard let keypair = Keypair() else {
-                    showNotSavedAlert = true
-                    return
-                }
-                
-                guard let encryptedNostrPrivateKey = Crypto.encrypt(keypair.privateKey.dataRepresentation) else {
-                    showNotSavedAlert = true
-                    return
-                }
-                
+                                
                 let dict: [String:Any] = [
-                    "nostrPrivkey": encryptedNostrPrivateKey,
                     "rpcPass": encRpcPass,
                     "rpcUser": "Unify"
                 ]
