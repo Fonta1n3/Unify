@@ -197,8 +197,14 @@ struct UploadInvoiceView: View {
             
             return invoice
         }
+                
+        guard let cgImage = image.cgImage else {
+            return nil
+        }
         
-        guard let ciImage = image.ciImage, let invoice = invoiceFromQrImage(ciImage: ciImage) else {
+        let ciImage = CIImage(cgImage: cgImage)
+                
+        guard let invoice = invoiceFromQrImage(ciImage: ciImage) else {
             return nil
         }
         
