@@ -36,7 +36,11 @@ class BitcoinCoreRPC {
                 return
             }
             
-            let rpcPort = UserDefaults.standard.object(forKey: "rpcPort") as? String ?? "8332"
+            guard let rpcPort = UserDefaults.standard.object(forKey: "rpcPort") as? String else {
+                completion((nil, "No rpcport specified."))
+                return
+            }
+            
             let walletName = UserDefaults.standard.object(forKey: "walletName") as? String
             var walletUrl = "http://\(rpcUser):\(rpcPass)@localhost:\(rpcPort)"
             

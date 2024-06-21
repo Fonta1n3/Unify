@@ -25,6 +25,8 @@ struct ConfigView: View {
     @State private var encSigner = ""
     @State private var bitcoinCoreConnected = false
     @State private var tint: Color = .red
+    @State private var chain = UserDefaults.standard.object(forKey: "network") as? String ?? "Signet"
+    let chains = ["Mainnet", "Signet", "Testnet", "Regtest"]
     
     
     var body: some View {
@@ -59,6 +61,35 @@ struct ConfigView: View {
                 if !bitcoinCoreConnected {
                     Text(bitcoinCoreError)
                         .foregroundStyle(.tertiary)
+                }
+                
+                HStack() {
+                    Label("Network", systemImage: "network")
+                    
+                    Spacer()
+                                        
+                    Picker("", selection: $chain) {
+                        ForEach(chains, id: \.self) {
+                            Text($0)
+                                .tag($0)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    .onChange(of: chain) {
+                        print("update network to \(chain)")
+                        
+                        switch chain {
+                        case "Mainnet": rpcPort = "8332"
+                        case "Signet": rpcPort = "38332"
+                        case "Testnet": rpcPort = "18332"
+                        case "Regtest": rpcPort = "18443"
+                        default:
+                            break
+                        }
+                        
+                        UserDefaults.standard.setValue(chain, forKey: "network")
+                        updateRpcPort()
+                    }
                 }
             }
             
@@ -123,35 +154,34 @@ struct ConfigView: View {
             }
             
             Section("RPC Wallet") {
-                Label("Wallet Filename", systemImage: "wallet.pass")
+                if rpcWallet == "" {
+                    Label("No wallet selected", systemImage: "wallet.pass")
+                        .foregroundStyle(.red)
+                } else {
+                    Label(rpcWallet, systemImage: "wallet.pass")
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                }
                 
                 if rpcWallets.count == 0 {
                     Text("No wallets...")
                         .foregroundStyle(.secondary)
                 }
                 
-                // Probably better as a dropdown menu or modal, could also call get wallet info to display wallet info.
-                ForEach(rpcWallets, id: \.self) { wallet in
-                    if rpcWallet == wallet {
-                        HStack {
-                            Image(systemName: "checkmark")
-                            
-                            Text(wallet)
-                                .foregroundStyle(.primary)
-                                .bold()
-                        }
-                        
-                    } else {
+                Picker("Select wallet", selection: $rpcWallet) {
+                    ForEach(rpcWallets, id: \.self) { wallet in
                         Text(wallet)
-                            .foregroundStyle(.secondary)
-                            .onTapGesture {
-                                UserDefaults.standard.setValue(wallet, forKey: "walletName")
-                                rpcWallet = wallet
-                            }
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                            .tag(wallet)
                     }
                 }
+                .pickerStyle(.menu)
+                .onChange(of: rpcWallet) {
+                    UserDefaults.standard.setValue(rpcWallet, forKey: "walletName")
+                }
                 
-                Text("Click or tap a wallet to select it. In Fully Noded you can see the wallet filename in the Wallet Detail view. Unify works with BIP84 only for now (native segwit) as mxing input and output types is bad for privacy.")
+                Text("Select a wallet to use. In Fully Noded you can see the wallet filename in the Wallet Info view. Unify works with BIP84 only for now (native segwit) as mixing input and output types is bad for privacy.")
                     .foregroundStyle(.tertiary)
             }
             
@@ -242,6 +272,8 @@ struct ConfigView: View {
                 return
             }
             
+            chain = UserDefaults.standard.object(forKey: "network") as? String ?? "Signet"
+            
             rpcPassword = rpcPass
             
             guard let savedRpcUser = credentials["rpcUser"] as? String else {
@@ -260,7 +292,7 @@ struct ConfigView: View {
                 rpcWallet = walletName
             }
             
-            rpcPort = UserDefaults.standard.object(forKey: "rpcPort") as? String ?? "8332"
+            rpcPort = UserDefaults.standard.object(forKey: "rpcPort") as? String ?? "38332"
             nostrRelay = UserDefaults.standard.object(forKey: "nostrRelay") as? String ?? "wss://relay.damus.io"
             
             BitcoinCoreRPC.shared.btcRPC(method: .listwallets) { (response, errorDesc) in

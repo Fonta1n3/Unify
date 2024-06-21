@@ -22,6 +22,7 @@ public struct EventContent: CustomStringConvertible {
 }
 
 
+// These parameters are optional and for now ignored.
 public struct EventContentParams: CustomStringConvertible {
     let version: Int?
     let maxAdditionalFeeContribution: Int?

@@ -9,14 +9,13 @@ import Foundation
 import LibWally
 
 class Signer {
-    class func masterKey(words: String, coinType: String, passphrase: String) -> String? {
-        let chain: Network
-        
-        if coinType == "0" {
-            chain = .mainnet
-        } else {
-            chain = .testnet
-        }
+    class func masterKey(words: String, chain: Network, passphrase: String) -> String? {
+//        let networkSetting = UserDefaults.standard.object(forKey: "network") as? String ?? "Signet"
+//        var chain: Network = .testnet
+//        
+//        if networkSetting == "Mainnet" {
+//            chain = .mainnet
+//        }
         
         if let mnmemonic = try? BIP39Mnemonic(words: words) {
             let seedHex = mnmemonic.seedHex(passphrase: passphrase)
@@ -31,9 +30,9 @@ class Signer {
     class func sign(psbt: String, passphrase: String?, completion: @escaping ((psbt: String?, rawTx: String?, errorMessage: String?)) -> Void) {
         var seedsToSignWith = [[String:Any]]()
         var xprvToSignWith: HDKey? = nil
-        var psbtToSign:PSBT!
-        var chain:Network!
-        var coinType:String!
+        var psbtToSign: PSBT!
+        var chain: Network!
+        //var coinType: String!
         
         func reset() {
             seedsToSignWith.removeAll()
@@ -43,34 +42,49 @@ class Signer {
         }
         
         func finalize() {
-            let param:Finalize_Psbt = .init(["psbt": psbtToSign.description])
-            BitcoinCoreRPC.shared.btcRPC(method: .finalizepsbt(param)) { (object, errorDescription) in
-                if let result = object as? NSDictionary {
-                    if let complete = result["complete"] as? Bool {
-                        if complete {
-                            let hex = result["hex"] as! String
-                            let psbt = psbtToSign.description
-                            reset()
-                            // Now always return the non finalized psbt as exporting signed psbt's can be useful.
-                            completion((psbt, hex, nil))
+            // First we strip out the bip32derivs for privacy reasons.
+            let paramDict:[String: Any] = [
+                "psbt": psbtToSign.description,
+                "bip32derivs": false
+            ]
+            
+            let param = Wallet_Process_PSBT(paramDict)
+            
+            BitcoinCoreRPC.shared.btcRPC(method: .walletprocesspsbt(param: param)) { (object, errorDescription) in
+                if let dict = object as? NSDictionary, let strippedPsbt = dict["psbt"] as? String {
+                    let finalizeParam:Finalize_Psbt = .init(["psbt": strippedPsbt])
+                    
+                    BitcoinCoreRPC.shared.btcRPC(method: .finalizepsbt(finalizeParam)) { (object, errorDescription) in
+                        if let result = object as? NSDictionary {
+                            if let complete = result["complete"] as? Bool {
+                                if complete {
+                                    let hex = result["hex"] as! String
+                                    reset()
+                                    completion((strippedPsbt, hex, nil))
+                                } else {
+                                    reset()
+                                    completion((strippedPsbt, nil, nil))
+                                }
+                            } else {
+                                reset()
+                                completion((nil, nil, errorDescription))
+                            }
                         } else {
-                            let psbt = result["psbt"] as! String
                             reset()
-                            completion((psbt, nil, nil))
+                            completion((nil, nil, errorDescription))
                         }
-                    } else {
-                        reset()
-                        completion((nil, nil, errorDescription))
                     }
-                } else {
-                    reset()
-                    completion((nil, nil, errorDescription))
                 }
             }
         }
         
         func processWithActiveWallet() {
-            let param: Wallet_Process_PSBT = .init(["psbt": psbtToSign.description])
+            let paramDict:[String: Any] = [
+                "psbt": psbtToSign.description
+            ]
+            
+            let param = Wallet_Process_PSBT(paramDict)
+            
             BitcoinCoreRPC.shared.btcRPC(method: .walletprocesspsbt(param: param)) { (object, errorDescription) in
                 if let dict = object as? NSDictionary {
                     if let processedPsbt = dict["psbt"] as? String {
@@ -181,7 +195,7 @@ class Signer {
                         if var words = String(data: seed, encoding: .utf8) {
                             seed = Data()
                             
-                            if var masterKey = masterKey(words: words, coinType: coinType, passphrase: "") {
+                            if var masterKey = masterKey(words: words, chain: chain, passphrase: "") {
                                 words = ""
                                 if var hdkey = try? HDKey(base58: masterKey) {
                                     masterKey = ""
@@ -199,14 +213,13 @@ class Signer {
             }
         }
         
-        let network = UserDefaults.standard.object(forKey: "chain") as? String ?? "main"
-        if network == "main" {
+        let networkSetting = UserDefaults.standard.object(forKey: "network") as? String ?? "Signet"
+        chain = .testnet
+        
+        if networkSetting == "Mainnet" {
             chain = .mainnet
-            coinType = "0"
-        } else {
-            chain = .testnet
-            coinType = "1"
         }
+        
         do {
             psbtToSign = try PSBT(psbt: psbt, network: chain)
             if psbtToSign.isComplete {

@@ -2,8 +2,7 @@
 
 ⚠️ Currently in very early stages, likely to change significantly in the future. It is pre-alpha and not been tested by anyone but myself.
 
-Nearly a [BIP78 over Nostr Payjoin](https://github.com/Kukks/BTCPayServer.BIP78/tree/nostr/BTCPayServer.BIP78.Nostr) wallet.
-Unify is fully functional, however won't be compatible with BTCPayServer, it will be soon.
+A [BIP78 over Nostr Payjoin](https://github.com/Kukks/BTCPayServer.BIP78/tree/nostr/BTCPayServer.BIP78.Nostr) wallet.
 
 ## Config
 - Upon first launch RPC and Nostr credentials are automatically created for you (you can edit them, `rpcauth` will automatically update).
@@ -42,14 +41,21 @@ Unify is fully functional, however won't be compatible with BTCPayServer, it wil
 - Must have a BIP39 signer that can sign for your inputs. 
 - Tor is not currently used for nostr traffic, a VPN is recommended.
 
-## Roadmap
+## Wishlist
 - NIP44? (currently utilizes NIP4 for cross compatibility).
-- Watch-only capability.
 - Manual change address selection (currently Bitcoin Core will automatically add a change output if needed).
-- Tor for Bitcoin Core node connection (currently `localhost` only).
 - A "PSBT" tab, where the user can create a psbt by adding inputs/outputs as they wish or by uploading a PSBT.
-- Output substitution.
-- Traditional BIP78 endpoints? The app can create an http server.
+- Output substitution?
+
+
+## TODO
+- Alerts when psbt is received.
+- Better error alerts.
+- Settings tab for switching networks, fee settings.
+- Watch-only capability, add ability to export each psbt for signing and paste back in.
+- Tor for Bitcoin Core node connection (currently `localhost` only).
+- Allow both parties to add multiple additional inputs/outputs.
+- Send notification to sender/receiver when either party broadcasts the payment.
 
 
 

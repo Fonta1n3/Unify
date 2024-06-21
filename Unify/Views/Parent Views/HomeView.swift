@@ -12,8 +12,8 @@ struct HomeView: View {
     @State private var showNotSavedAlert = false
     @State private var showSavedAlert = false
     
-    private let names = ["Receive", "Send", "Config"]
-    private let views: [any View] = [ReceiveView(), SendView(), ConfigView()]
+    private let names = ["Receive", "Send", "History", "Config", "Test View"]
+    private let views: [any View] = [ReceiveView(), SendView(), HistoryView(), ConfigView(), TestView()]
     
     private func createDefaultCreds() {
         DataManager.retrieve(entityName: "Credentials") { credentials in
@@ -28,6 +28,9 @@ struct HomeView: View {
                     showNotSavedAlert = true
                     return
                 }
+                
+                UserDefaults.standard.setValue("38332", forKey: "rpcPort")
+                UserDefaults.standard.setValue("Signet", forKey: "network")
                 
                 let rpcpass = rpcauthcreds.password
                 
@@ -74,20 +77,31 @@ struct HomeView: View {
                     Text("Send")
                 }
                 NavigationLink {
+                    HistoryView()
+                } label: {
+                    Text("History")
+                }
+                NavigationLink {
                     ConfigView()
                 } label: {
                     Text("Config")
+                }
+                NavigationLink {
+                    TestView()
+                } label: {
+                    Text("Test View")
                 }
             }
             Text(Messages.contentViewPrompt.description)
             
         }
+        .preferredColorScheme(.dark)
         .alert(CoreDataError.notSaved.localizedDescription, isPresented: $showNotSavedAlert) {
             Button("OK", role: .cancel) { }
         }
-        .alert(Messages.savedCredentials.description, isPresented: $showSavedAlert) {
-            Button("OK", role: .cancel) { }
-        }
+//        .alert(Messages.savedCredentials.description, isPresented: $showSavedAlert) {
+//            Button("OK", role: .cancel) { }
+//        }
         .onAppear {
             DispatchQueue.global(qos: .background).async {
                 createDefaultCreds()

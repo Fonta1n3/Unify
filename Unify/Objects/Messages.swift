@@ -17,7 +17,7 @@ enum Messages : String {
                 return "Select Config to export authentication credentials for your bitcoin.conf and to select a wallet."
             
         case .savedCredentials:
-            return "Pay Join automatically created and saved default credentials so you can connect your node and encrypt your nostr traffic. Go to Config to view, edit or export them."
+            return "Unify created default credentials to connect to your node. Go to Config to view, edit or export them."
         }
     }
 }
