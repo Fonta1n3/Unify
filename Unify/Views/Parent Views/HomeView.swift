@@ -12,8 +12,8 @@ struct HomeView: View {
     @State private var showNotSavedAlert = false
     @State private var showSavedAlert = false
     
-    private let names = ["Receive", "Send", "History", "Config", "Test View"]
-    private let views: [any View] = [ReceiveView(), SendView(), HistoryView(), ConfigView(), TestView()]
+    private let names = ["Receive", "Send", "History", "Config"]
+    private let views: [any View] = [ReceiveView(), SendView(), HistoryView(), ConfigView()]
     
     private func createDefaultCreds() {
         DataManager.retrieve(entityName: "Credentials") { credentials in
@@ -86,11 +86,6 @@ struct HomeView: View {
                 } label: {
                     Text("Config")
                 }
-                NavigationLink {
-                    TestView()
-                } label: {
-                    Text("Test View")
-                }
             }
             Text(Messages.contentViewPrompt.description)
             
@@ -99,9 +94,6 @@ struct HomeView: View {
         .alert(CoreDataError.notSaved.localizedDescription, isPresented: $showNotSavedAlert) {
             Button("OK", role: .cancel) { }
         }
-//        .alert(Messages.savedCredentials.description, isPresented: $showSavedAlert) {
-//            Button("OK", role: .cancel) { }
-//        }
         .onAppear {
             DispatchQueue.global(qos: .background).async {
                 createDefaultCreds()

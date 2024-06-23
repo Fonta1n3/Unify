@@ -16,7 +16,8 @@ struct SendView: View, DirectMessageEncrypting {
     @State private var invoiceUploaded = false
     @State private var showUtxos = false
     @State private var utxos: [Utxo] = []
-    @State private var showNoUtxosMessage = false
+    @State private var showError = false
+    @State private var errorDesc = ""
     
     var body: some View {
         Spacer()
@@ -47,9 +48,16 @@ struct SendView: View, DirectMessageEncrypting {
             if showUtxos, let uploadedInvoice = uploadedInvoice {
                 if utxos.count > 0 {
                     NavigationLink {
-                        SpendableUtxosView(utxos: utxos, invoice: uploadedInvoice)
+                        SpendableUtxosView(utxos: utxos, invoice: uploadedInvoice, automaticInputSelection: false)
                     } label: {
-                        Text("Select Utxos to Payjoin")
+                        Text("Select utxos to pay with")
+                            .foregroundStyle(.blue)
+                    }
+                    
+                    NavigationLink {
+                        SpendableUtxosView(utxos: utxos, invoice: uploadedInvoice, automaticInputSelection: true)
+                    } label: {
+                        Text("Pay invoice with automatic utxo selection")
                             .foregroundStyle(.blue)
                     }
                     
@@ -71,6 +79,15 @@ struct SendView: View, DirectMessageEncrypting {
             invoiceUploaded = false
             getUtxos()
         }
+        .alert(errorDesc, isPresented: $showError) {
+            Button("OK", role: .cancel) {}
+        }
+    }
+    
+    
+    private func displayError(desc: String) {
+        errorDesc = desc
+        showError = true
     }
     
     
@@ -79,13 +96,18 @@ struct SendView: View, DirectMessageEncrypting {
         
         BitcoinCoreRPC.shared.btcRPC(method: .listunspent(p)) { (response, errorDesc) in
             guard let response = response as? [[String: Any]] else {
-                // else prompt to import a psbt or a utxo
-                showNoUtxosMessage = true
+                displayError(desc: errorDesc ?? "Unknown error from listunspent.")
+                
+                return
+            }
+            
+            guard response.count > 0 else {
+                displayError(desc: "No utxos.")
+                
                 return
             }
             
             var spendable = false
-            showNoUtxosMessage = response.count == 0
             
             for item in response {
                 let utxo = Utxo(item)
@@ -99,6 +121,8 @@ struct SendView: View, DirectMessageEncrypting {
             
             if spendable {
                 showUtxos = true
+            } else {
+                displayError(desc: "No spendable utxos.")
             }
         }
     }

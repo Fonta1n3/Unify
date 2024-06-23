@@ -27,7 +27,7 @@ import Foundation
   }
  */
 
-public struct Transaction: CustomStringConvertible, Hashable {
+public struct TransactionStruct: CustomStringConvertible, Hashable {
     let id = UUID()
     let amount: Double
     let fee: Double?

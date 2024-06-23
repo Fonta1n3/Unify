@@ -14,6 +14,8 @@ struct BroadcastView: View, DirectMessageEncrypting {
     @Environment(\.presentationMode) var presentationMode: Binding<PresentationMode>
     @State private var txid: String?
     @State private var sending = false
+    @State private var showError = false
+    @State private var errorDesc = ""
     
     let hexstring: String
     let invoice: Invoice
@@ -33,6 +35,9 @@ struct BroadcastView: View, DirectMessageEncrypting {
             if sending {
                 VStack() {
                     ProgressView()
+                }
+                .alert(errorDesc, isPresented: $showError) {
+                    Button("OK", role: .cancel) {}
                 }
             } else {
                 Form() {
@@ -75,6 +80,9 @@ struct BroadcastView: View, DirectMessageEncrypting {
                             Spacer()
                         }
                     }
+                }
+                .alert(errorDesc, isPresented: $showError) {
+                    Button("OK", role: .cancel) {}
                 }
             }
         } else if let txid = txid {
@@ -136,7 +144,17 @@ struct BroadcastView: View, DirectMessageEncrypting {
                     Spacer()
                 }
             }
+            .formStyle(.grouped)
+            .alert(errorDesc, isPresented: $showError) {
+                Button("OK", role: .cancel) {}
+            }
         }
+    }
+    
+    
+    private func displayError(desc: String) {
+        errorDesc = desc
+        showError = true
     }
     
     private func broadcast() {
@@ -144,7 +162,8 @@ struct BroadcastView: View, DirectMessageEncrypting {
         
         BitcoinCoreRPC.shared.btcRPC(method: .sendrawtransaction(p)) { (response, errorDesc) in
             guard let response = response as? String else {
-                print("error sending")
+                displayError(desc: errorDesc ?? "Unknown error from sendrawtransaction.")
+                
                 return
             }
             
@@ -154,26 +173,12 @@ struct BroadcastView: View, DirectMessageEncrypting {
              guard let encEvent = try? encrypt(content: "Payment broadcast by sender ✓",
                                                privateKey: ourKeypair.privateKey,
                                                publicKey: recipientsPubkey) else {
+                 displayError(desc: "Encrypting event failed.")
+                 
                  return
              }
             
-            let urlString = UserDefaults.standard.string(forKey: "nostrRelay") ?? "wss://relay.damus.io"
-            
-            StreamManager.shared.closeWebSocket()
-            
-            StreamManager.shared.openWebSocket(relayUrlString: urlString, peerNpub: invoice.recipientsNpub!, p: nil)
-            
-            StreamManager.shared.eoseReceivedBlock = { _ in
-                StreamManager.shared.writeEvent(content: encEvent, recipientNpub: invoice.recipientsNpub!, ourKeypair: ourKeypair)
-                #if DEBUG
-                print("SEND: \(encEvent)")
-                #endif
-            }
-            
-            StreamManager.shared.errorReceivedBlock = { nostrError in
-                print("nostr received error: \(nostrError)")
-            }
-             
+            StreamManager.shared.writeEvent(content: encEvent, recipientNpub: invoice.recipientsNpub!, ourKeypair: ourKeypair)
         }
     }
 }

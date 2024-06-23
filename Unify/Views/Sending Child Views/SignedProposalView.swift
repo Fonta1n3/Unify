@@ -20,12 +20,7 @@ struct SignedProposalView: View {
     let ourKeypair: Keypair
     let recipientsPubkey: PublicKey
     let psbtProposal: PSBT
-    
-//    init(signedPsbt: String, signedRawTx: String, invoice: Invoice, ourKeypair: Keypair, recipientsPubkey: PublicKey) {
-//        self.signedPsbt = signedPsbt
-//        self.signedRawTx = signedRawTx
-//        self.invoice = invoice
-//    }
+
     
     var body: some View {
         Form() {
@@ -153,5 +148,4 @@ struct SignedProposalView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(EdgeInsets(top: 12, leading: 12, bottom: 12, trailing: 12))
     }
-        
 }

@@ -9,10 +9,25 @@ import Foundation
 import SwiftUI
 
 struct HistoryView: View {
-    @State private var transactions: [Transaction] = []
+    @State private var transactions: [TransactionStruct] = []
     @State private var copied = false
+    @State private var showError = false
+    @State private var errorToShow = ""
         
     var body: some View {
+        HStack() {
+            Spacer()
+            
+            Button() {
+                listTransactions()
+            } label: {
+                Image(systemName: "arrow.clockwise")
+                    .foregroundStyle(.blue)
+            }
+        }
+        .background(.clear)
+        
+        
         Form() {
             List() {
                 ForEach(transactions, id: \.self) { transaction in
@@ -21,9 +36,6 @@ struct HistoryView: View {
                     Section("Transaction") {
                         HStack() {
                             if transaction.category == "send" {
-//                                Label("Category", systemImage: "arrow.up.right.circle")
-//                                    .foregroundStyle(.secondary)
-//                                    .tint(.red)
                                 Label {
                                     Text("Category")
                                         .foregroundStyle(.secondary)
@@ -31,7 +43,6 @@ struct HistoryView: View {
                                     Image(systemName: "arrow.up.right.circle")
                                         .foregroundColor(.red)
                                 }
-                                
                                
                             } else {
                                 Label {
@@ -150,20 +161,31 @@ struct HistoryView: View {
         .onAppear {
             listTransactions()
         }
+        .alert(errorToShow, isPresented: $showError) {
+            Button("OK", role: .cancel) {}
+        }
     }
 
+    
+    private func displayError(desc: String) {
+        errorToShow = desc
+        showError = true
+    }
     
     
     private func listTransactions() {
         let p = List_Transactions(["count": 100])
+        transactions.removeAll()
         
         BitcoinCoreRPC.shared.btcRPC(method: .listtransactions(p)) { (response, errorDesc) in
             guard let transactions = response as? [[String: Any]] else {
+                displayError(desc: errorDesc ?? "Unknown error listtransactions.")
+                
                 return
             }
             
-            for transaction in transactions {
-                let tx = Transaction(transaction)
+            for transaction in transactions.reversed() {
+                let tx = TransactionStruct(transaction)
                 
                 self.transactions.append(tx)
             }
