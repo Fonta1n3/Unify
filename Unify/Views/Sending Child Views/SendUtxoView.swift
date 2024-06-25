@@ -11,9 +11,8 @@ import NostrSDK
 import LibWally
 
 struct SpendableUtxosView: View, DirectMessageEncrypting {
-    @Environment(\.presentationMode) var presentationMode: Binding<PresentationMode>
+    //@Environment(\.presentationMode) var presentationMode: Binding<PresentationMode>
     private let urlString = UserDefaults.standard.string(forKey: "nostrRelay") ?? "wss://relay.damus.io"
-    
     @State private var spendableBalance = 0.0
     @State private var signedRawTx: String?
     @State private var txid: String?
@@ -28,21 +27,13 @@ struct SpendableUtxosView: View, DirectMessageEncrypting {
     @State private var waitingForResponse = false
     @State private var errorToDisplay = ""
     @State private var showError = false
+    @Binding var path: [String]
+    
     
     let utxos: [Utxo]
     let invoice: Invoice
     let automaticInputSelection: Bool
     
-    init(utxos: [Utxo], invoice: Invoice, automaticInputSelection: Bool) {
-        self.utxos = utxos
-        self.invoice = invoice
-        self.automaticInputSelection = automaticInputSelection
-        
-        if automaticInputSelection == true {
-            waitingForResponse = true
-            payInvoice(invoice: invoice, selectedUtxos: [], utxos: utxos)
-        }
-    }
     
     var body: some View {
         if !waitingForResponse {
@@ -50,22 +41,12 @@ struct SpendableUtxosView: View, DirectMessageEncrypting {
                let signedPsbt = signedPsbt,
                let ourKeypair = ourKeypair,
                let recipientsPubkey = recipientsPubkey {
-                Form() {
-                    Text("Payjoin proposal received from the recipient ✓")
-                    
-                    NavigationLink() {
-                        SignedProposalView(signedRawTx: signedRawTx,
-                                           invoice: invoice,
-                                           ourKeypair: ourKeypair,
-                                           recipientsPubkey: recipientsPubkey,
-                                           psbtProposal: signedPsbt)
-                    } label: {
-                        Text("Tap to view Payjoin Proposal")
-                            .foregroundStyle(.blue)
-                    }
-                    .buttonStyle(.bordered)
-                }
-                .formStyle(.grouped)
+                SignedProposalView(path: $path,
+                                   signedRawTx: signedRawTx,
+                                   invoice: invoice,
+                                   ourKeypair: ourKeypair,
+                                   recipientsPubkey: recipientsPubkey,
+                                   psbtProposal: signedPsbt)
                 .alert(errorToDisplay, isPresented: $showError) {
                     Button("OK", role: .cancel) {}
                 }
@@ -131,18 +112,15 @@ struct SpendableUtxosView: View, DirectMessageEncrypting {
                     Text("Hold the command button to select multiple utxos.")
                         .foregroundStyle(.secondary)
                     #endif
+                } else {
+                    Button("", action: {})
+                    .onAppear {
+                        payInvoice(invoice: invoice, selectedUtxos: [], utxos: utxos)
+                    }
                 }
             }
         } else {
-            ProgressView("Waiting for payjoin proposal")
-                .alert("Payment broadcast by sender ✓", isPresented: $paymentBroadcastByRecipient) {
-                    Button("OK", role: .cancel) {
-                        self.presentationMode.wrappedValue.dismiss()
-                    }
-                }
-                .alert(errorToDisplay, isPresented: $showError) {
-                    Button("OK", role: .cancel) {}
-                }
+            Spinner()
         }
     }
     
@@ -194,7 +172,6 @@ struct SpendableUtxosView: View, DirectMessageEncrypting {
             
             Signer.sign(psbt: psbt, passphrase: nil, completion: { (signedPsbt, rawTx, errorMessage) in
                 guard let signedPsbt = signedPsbt else {
-                    print("psbt not signed")
                     showError(desc: errorMessage ?? "Unknown signing error.")
                     
                     return
@@ -205,6 +182,7 @@ struct SpendableUtxosView: View, DirectMessageEncrypting {
                 BitcoinCoreRPC.shared.btcRPC(method: .decoderawtransaction(param: decodeRawP)) { (response, errorDesc) in
                     guard let response = response as? [String: Any] else {
                         showError(desc: errorDesc ?? "Unknown error from decoderawtransaction.")
+                        
                         return
                     }
                     
@@ -557,5 +535,11 @@ struct SpendableUtxosView: View, DirectMessageEncrypting {
                 }                
             })
         }
+    }
+}
+
+struct Spinner: View {
+    var body: some View {
+        ProgressView("Waiting for payjoin proposal")
     }
 }

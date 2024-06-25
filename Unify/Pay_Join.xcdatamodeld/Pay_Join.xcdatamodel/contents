@@ -6,6 +6,5 @@
     </entity>
     <entity name="Signers" representedClassName="Signers" syncable="YES" codeGenerationType="class">
         <attribute name="encryptedData" optional="YES" attributeType="Binary"/>
-        <attribute name="passphrase" optional="YES" attributeType="Binary"/>
     </entity>
 </model>

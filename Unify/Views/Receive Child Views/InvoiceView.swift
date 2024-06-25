@@ -80,6 +80,30 @@ struct InvoiceView: View, DirectMessageEncrypting {
                         }
                     }
                     
+                    HStack() {
+                        Label {
+                            Text("Invoice Address")
+                                .foregroundStyle(.secondary)
+                        } icon: {
+                            Image(systemName: "arrow.down.forward.circle")
+                                .foregroundStyle(.blue)
+                        }
+                        
+                        Text(invoiceAddress)
+                    }
+                    
+                    HStack() {
+                        Label {
+                            Text("Invoice Amount")
+                                .foregroundStyle(.secondary)
+                        } icon: {
+                            Image(systemName: "bitcoinsign.circle")
+                                .foregroundStyle(.blue)
+                        }
+                        
+                        Text(invoiceAmount.btcBalanceWithSpaces)
+                    }                    
+                    
                     Text("Share this invoice with the payee, they will send us the original psbt which we may broadcast as is or optionally create a Payjoin proposal.")
                         .foregroundStyle(.secondary)
                 }
@@ -94,7 +118,7 @@ struct InvoiceView: View, DirectMessageEncrypting {
                             .truncationMode(.middle)
                             .lineLimit(1)
                             .multilineTextAlignment(.leading)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(.primary)
                         
                         Button {
                             #if os(macOS)
@@ -117,7 +141,7 @@ struct InvoiceView: View, DirectMessageEncrypting {
                     }
                     
                     Text("Optionally broadcast the received payment from the sender instead of creating a Payjoin transaction. In order to create the Payjoin transaction you must select Create Payjoin Proposal below.")
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(.secondary)
                 }
             }
             
@@ -132,6 +156,15 @@ struct InvoiceView: View, DirectMessageEncrypting {
             
         }
         .onAppear(perform: {
+            hex = nil
+            invoice = nil
+            originalPsbt = nil
+            payeePubkey = nil
+            peerNpub = ""
+            paymentBroadcastBySender = false
+            originalPsbtReceived = false
+            txSent = false
+            ourKeypair = nil
             ourKeypair = Keypair()
             connectToNostr()
         })
@@ -435,6 +468,7 @@ struct QRView: View {
 struct CreateProposalView: View, DirectMessageEncrypting {
     @State private var showErr = false
     @State private var errDesc = ""
+    @State private var showSpinner = false
     
     let additionalInputs: [Utxo]?
     let originalPsbt: PSBT
@@ -444,104 +478,119 @@ struct CreateProposalView: View, DirectMessageEncrypting {
     let additionalOutputAmount: String
 
     var body: some View {
-        Button("Create Payjoin Proposal") {
-            var inputsForParams: [[String:Any]] = []
-            
-            if let additionalInputs = additionalInputs {
-                // add our input
-                for input in additionalInputs {
-                    var ourInputDict: [String: Any] = [:]
-                    ourInputDict["txid"] = input.txid
-                    ourInputDict["vout"] = input.vout
-                    inputsForParams.append(ourInputDict)
-                }
+        if !showSpinner {
+            Button("Create Payjoin Proposal") {
+                showSpinner = true
+                createProposal()
             }
-            
-            // add the output
-            let ourOutput = [additionalOutputAddress: additionalOutputAmount]
-            var outputsForParams: [[String: Any]] = []
-            outputsForParams.append(ourOutput)
+            .alert(errDesc, isPresented: $showErr) {
+                Button("OK", role: .cancel) {}
+            }
+        } else {
+            ProgressView("Waiting on response from sender.")
+                .alert(errDesc, isPresented: $showErr) {
+                    Button("OK", role: .cancel) {}
+                }
+        }
+        
+    }
+    
+    
+    private func createProposal() {
+        var inputsForParams: [[String:Any]] = []
+        
+        if let additionalInputs = additionalInputs {
+            // add our input
+            for input in additionalInputs {
+                var ourInputDict: [String: Any] = [:]
+                ourInputDict["txid"] = input.txid
+                ourInputDict["vout"] = input.vout
+                inputsForParams.append(ourInputDict)
+            }
+        }
+        
+        // add the output
+        let ourOutput = [additionalOutputAddress: additionalOutputAmount]
+        var outputsForParams: [[String: Any]] = []
+        outputsForParams.append(ourOutput)
 
-            let options = ["add_inputs": true]
+        let options = ["add_inputs": true]
 
-            let paramDict:[String: Any] = [
-                "inputs": inputsForParams,
-                "outputs": outputsForParams,
-                "options": options,
-                "bip32derivs": false
-            ]
+        let paramDict:[String: Any] = [
+            "inputs": inputsForParams,
+            "outputs": outputsForParams,
+            "options": options,
+            "bip32derivs": false
+        ]
 
-            let p = Wallet_Create_Funded_Psbt(paramDict)
+        let p = Wallet_Create_Funded_Psbt(paramDict)
 
-            BitcoinCoreRPC.shared.btcRPC(method: .walletcreatefundedpsbt(param: p)) { (response, errorDesc) in
-                guard let response = response as? [String: Any], let receiversPsbt = response["psbt"] as? String else {
-                    showError(desc: errorDesc ?? "Unknown error walletcreatefundedpsbt.")
+        BitcoinCoreRPC.shared.btcRPC(method: .walletcreatefundedpsbt(param: p)) { (response, errorDesc) in
+            guard let response = response as? [String: Any], let receiversPsbt = response["psbt"] as? String else {
+                showError(desc: errorDesc ?? "Unknown error walletcreatefundedpsbt.")
+                
+                return
+            }
+
+            let param = Join_Psbt(["txs": [receiversPsbt, originalPsbt.description]])
+
+            BitcoinCoreRPC.shared.btcRPC(method: .joinpsbts(param)) { (response, errorMessage) in
+                guard let payjoinProposalUnsigned = response as? String else {
+                    showError(desc: errorMessage ?? "Uknown error joinpsbts.")
                     
                     return
                 }
 
-                let param = Join_Psbt(["txs": [receiversPsbt, originalPsbt.description]])
-
-                BitcoinCoreRPC.shared.btcRPC(method: .joinpsbts(param)) { (response, errorMessage) in
-                    guard let payjoinProposalUnsigned = response as? String else {
-                        showError(desc: errorMessage ?? "Uknown error joinpsbts.")
+                Signer.sign(psbt: payjoinProposalUnsigned, passphrase: nil) { (signedPayjoinProposal, rawTx, errorMessage) in
+                    guard let signedPayjoinProposal = signedPayjoinProposal else {
+                        showError(desc: errorMessage ?? "Unknown error signing the payjoin proposal.")
                         
                         return
                     }
 
-                    Signer.sign(psbt: payjoinProposalUnsigned, passphrase: nil) { (signedPayjoinProposal, rawTx, errorMessage) in
-                        guard let signedPayjoinProposal = signedPayjoinProposal else {
-                            showError(desc: errorMessage ?? "Unknown error signing the payjoin proposal.")
-                            
-                            return
-                        }
-
-                        let unencryptedContent = [
-                            "psbt": signedPayjoinProposal,
-                            "parameters": [
+                    let unencryptedContent = [
+                        "psbt": signedPayjoinProposal,
+                        "parameters": [
 //                                "version": 1,
 //                                "maxAdditionalFeeContribution": 1000,
 //                                "additionalFeeOutputIndex": 0,
 //                                "minFeeRate": 10,
 //                                "disableOutputSubstitution": true
-                            ]
                         ]
+                    ]
 
-                        guard let jsonData = try? JSONSerialization.data(withJSONObject: unencryptedContent, options: .prettyPrinted) else {
-                            #if DEBUG
-                            print("converting to jsonData failing...")
-                            #endif
-                            showError(desc: "Converting to jsonData failing...")
-                            
-                            return
-                        }
-
-                        guard let jsonString = String(data: jsonData, encoding: .utf8) else {
-                            showError(desc: "Unable to convert jsonData to jsonString.")
-                            
-                            return
-                        }
-
-                        guard let encPsbtProposal = encryptedMessage(ourKeypair: ourKeypair,
-                                                                     receiversNpub: payeeNpub,
-                                                                     message: jsonString) else {
-                            
-                            return
-                        }
-
-                        StreamManager.shared.writeEvent(content: encPsbtProposal, recipientNpub: payeeNpub, ourKeypair: ourKeypair)
+                    guard let jsonData = try? JSONSerialization.data(withJSONObject: unencryptedContent, options: .prettyPrinted) else {
+                        #if DEBUG
+                        print("converting to jsonData failing...")
+                        #endif
+                        showError(desc: "Converting to jsonData failing...")
+                        
+                        return
                     }
+
+                    guard let jsonString = String(data: jsonData, encoding: .utf8) else {
+                        showError(desc: "Unable to convert jsonData to jsonString.")
+                        
+                        return
+                    }
+
+                    guard let encPsbtProposal = encryptedMessage(ourKeypair: ourKeypair,
+                                                                 receiversNpub: payeeNpub,
+                                                                 message: jsonString) else {
+                        
+                        return
+                    }
+
+                    StreamManager.shared.writeEvent(content: encPsbtProposal, recipientNpub: payeeNpub, ourKeypair: ourKeypair)
                 }
             }
-        }
-        .alert(errDesc, isPresented: $showErr) {
-            Button("OK", role: .cancel) {}
         }
     }
     
     
     private func showError(desc: String) {
         errDesc = desc
+        showSpinner = false
         showErr = true
     }
 

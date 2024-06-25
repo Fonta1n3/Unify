@@ -69,6 +69,9 @@ struct ReceiveAddOutputView: View {
                 }
             }
             
+            Text("Adding an output to the transaction is what makes this a Pajoin transaction. This should be a payment to another entity or a consolidation. This output will not be shown in the invoice.")
+                .foregroundStyle(.secondary)
+            
             if additionalOutputAmount != "", additionalOutputAddress != "" {
                 NavigationLink {
                     InvoiceView(invoiceAmount: invoiceAmount,

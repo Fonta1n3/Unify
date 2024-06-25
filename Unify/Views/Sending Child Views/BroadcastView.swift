@@ -16,6 +16,7 @@ struct BroadcastView: View, DirectMessageEncrypting {
     @State private var sending = false
     @State private var showError = false
     @State private var errorDesc = ""
+    @Binding var path: NavigationPath
     
     let hexstring: String
     let invoice: Invoice
@@ -23,12 +24,12 @@ struct BroadcastView: View, DirectMessageEncrypting {
     let recipientsPubkey: PublicKey
     
     
-    init(hexstring: String, invoice: Invoice, ourKeypair: Keypair, recipientsPubkey: PublicKey) {
-        self.hexstring = hexstring
-        self.invoice = invoice
-        self.ourKeypair = ourKeypair
-        self.recipientsPubkey = recipientsPubkey
-    }
+//    init(hexstring: String, invoice: Invoice, ourKeypair: Keypair, recipientsPubkey: PublicKey) {
+//        self.hexstring = hexstring
+//        self.invoice = invoice
+//        self.ourKeypair = ourKeypair
+//        self.recipientsPubkey = recipientsPubkey
+//    }
     
     var body: some View {
         if txid == nil {

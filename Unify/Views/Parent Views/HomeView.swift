@@ -11,9 +11,72 @@ import NostrSDK
 struct HomeView: View {
     @State private var showNotSavedAlert = false
     @State private var showSavedAlert = false
+    //@State private var navPath = NavigationPath()
     
-    private let names = ["Receive", "Send", "History", "Config"]
-    private let views: [any View] = [ReceiveView(), SendView(), HistoryView(), ConfigView()]
+    var body: some View {
+        NavigationStack() {
+            List() {
+                NavigationLink {
+                    ReceiveView()
+                    
+                } label: {
+                    Label {
+                        Text("Receive")
+                    } icon: {
+                        Image(systemName: "arrow.down.forward.circle")
+                            .foregroundStyle(.blue)
+                    }
+                }
+                
+                NavigationLink {
+                    SendView()
+                    
+                } label: {
+                    Label {
+                        Text("Send")
+                    } icon: {
+                        Image(systemName: "arrow.up.forward.circle")
+                            .foregroundStyle(.blue)
+                    }
+                }
+                
+                NavigationLink {
+                    HistoryView()
+                    
+                } label: {
+                    Label {
+                        Text("History")
+                    } icon: {
+                        Image(systemName: "clock")
+                            .foregroundStyle(.blue)
+                    }
+                }
+                
+                NavigationLink {
+                    ConfigView()
+                    
+                } label: {
+                    Label {
+                        Text("Config")
+                    } icon: {
+                        Image(systemName: "gear")
+                            .foregroundStyle(.blue)
+                    }
+                }
+            }
+            .navigationTitle("Unify")
+        }
+        .preferredColorScheme(.dark)
+        .alert(CoreDataError.notSaved.localizedDescription, isPresented: $showNotSavedAlert) {
+            Button("OK", role: .cancel) { }
+        }
+        .onAppear {
+            DispatchQueue.global(qos: .background).async {
+                createDefaultCreds()
+            }
+        }
+    }
+    
     
     private func createDefaultCreds() {
         DataManager.retrieve(entityName: "Credentials") { credentials in
@@ -59,45 +122,6 @@ struct HomeView: View {
             }
             
             showSavedAlert = true
-        }
-    }
-    
-    
-    var body: some View {
-        NavigationView {
-            List() {
-                NavigationLink {
-                    ReceiveView()
-                } label: {
-                    Text("Receive")
-                }
-                NavigationLink {
-                    SendView()
-                } label: {
-                    Text("Send")
-                }
-                NavigationLink {
-                    HistoryView()
-                } label: {
-                    Text("History")
-                }
-                NavigationLink {
-                    ConfigView()
-                } label: {
-                    Text("Config")
-                }
-            }
-            Text(Messages.contentViewPrompt.description)
-            
-        }
-        .preferredColorScheme(.dark)
-        .alert(CoreDataError.notSaved.localizedDescription, isPresented: $showNotSavedAlert) {
-            Button("OK", role: .cancel) { }
-        }
-        .onAppear {
-            DispatchQueue.global(qos: .background).async {
-                createDefaultCreds()
-            }
         }
     }
 }

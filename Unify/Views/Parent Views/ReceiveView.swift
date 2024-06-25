@@ -18,14 +18,12 @@ struct ReceiveView: View {
     
     
     var body: some View {
-        Spacer()
-        
         Label("Receive", systemImage: "arrow.down.forward.circle")
         
         Form() {
             Section("Create Invoice") {
                 HStack() {
-                    Label("BTC Amount", systemImage: "bitcoinsign.circle")
+                    Label("Invoice Amount", systemImage: "bitcoinsign.circle")
                         .frame(maxWidth: 200, alignment: .leading)
                     
                     Spacer()
@@ -37,7 +35,7 @@ struct ReceiveView: View {
                 }
                 
                 HStack() {
-                    Label("Recipient address", systemImage: "arrow.down.forward.circle")
+                    Label("Invoice address", systemImage: "arrow.down.forward.circle")
                         .frame(maxWidth: 200, alignment: .leading)
                     
                     Spacer()
@@ -88,6 +86,7 @@ struct ReceiveView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(EdgeInsets(top: 12, leading: 12, bottom: 12, trailing: 12))
         .onAppear {
+            amount = ""
             fetchAddress()
             getUtxos()
         }
@@ -119,6 +118,7 @@ struct ReceiveView: View {
     
     private func getUtxos() {
         let p = List_Unspent([:])
+        utxos.removeAll()
         
         BitcoinCoreRPC.shared.btcRPC(method: .listunspent(p)) { (response, errorDesc) in
             guard let response = response as? [[String: Any]] else {

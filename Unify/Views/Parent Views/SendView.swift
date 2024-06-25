@@ -12,13 +12,17 @@ import SwiftUICoreImage
 import LibWally
 
 struct SendView: View, DirectMessageEncrypting {
+    @State private var navPath: [String] = []
     @State private var uploadedInvoice: Invoice?
     @State private var invoiceUploaded = false
     @State private var showUtxos = false
     @State private var utxos: [Utxo] = []
     @State private var showError = false
     @State private var errorDesc = ""
+    @State private var showAutomaticDetailView = false
+    @State private var showManualDetailView = false
     
+        
     var body: some View {
         Spacer()
         
@@ -47,20 +51,28 @@ struct SendView: View, DirectMessageEncrypting {
             }
             if showUtxos, let uploadedInvoice = uploadedInvoice {
                 if utxos.count > 0 {
-                    NavigationLink {
-                        SpendableUtxosView(utxos: utxos, invoice: uploadedInvoice, automaticInputSelection: false)
-                    } label: {
-                        Text("Select utxos to pay with")
-                            .foregroundStyle(.blue)
+                    NavigationStack(path: $navPath) {
+                        List() {
+                            Button {
+                                navPath.append("SpendableUtxosViewManual")
+                            } label: {
+                                Text("Add utxos manually")
+                            }
+                            
+                            Button {
+                                navPath.append("SpendableUtxosViewAuto")
+                            } label: {
+                                Text("Add utxos automatically")
+                            }
+                        }                        
+                        .navigationDestination(for: String.self) { string in
+                            if string == "SpendableUtxosViewManual" {
+                                SpendableUtxosView(path: $navPath, utxos: utxos, invoice: uploadedInvoice, automaticInputSelection: false)
+                            } else if string == "SpendableUtxosViewAuto" {
+                                SpendableUtxosView(path: $navPath, utxos: utxos, invoice: uploadedInvoice, automaticInputSelection: true)
+                            }
+                        }
                     }
-                    
-                    NavigationLink {
-                        SpendableUtxosView(utxos: utxos, invoice: uploadedInvoice, automaticInputSelection: true)
-                    } label: {
-                        Text("Pay invoice with automatic utxo selection")
-                            .foregroundStyle(.blue)
-                    }
-                    
                 } else {
                     Section("UTXOs") {
                         Text("No spendable utxos.")
@@ -93,6 +105,7 @@ struct SendView: View, DirectMessageEncrypting {
     
     private func getUtxos() {
         let p = List_Unspent([:])
+        utxos.removeAll()
         
         BitcoinCoreRPC.shared.btcRPC(method: .listunspent(p)) { (response, errorDesc) in
             guard let response = response as? [[String: Any]] else {
@@ -125,6 +138,17 @@ struct SendView: View, DirectMessageEncrypting {
                 displayError(desc: "No spendable utxos.")
             }
         }
+    }
+}
+
+
+struct NavigationLazyView<Content: View>: View {
+    let build: () -> Content
+    init(_ build: @autoclosure @escaping () -> Content) {
+        self.build = build
+    }
+    var body: Content {
+        build()
     }
 }
 
@@ -264,13 +288,6 @@ struct UploadInvoiceView: View {
         return invoice
     }
 }
-
-
-
-    
-    
-    
-//}
 
 #if os(macOS)
 extension View {

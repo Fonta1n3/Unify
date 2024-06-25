@@ -26,6 +26,7 @@ struct ConfigView: View {
     @State private var bitcoinCoreConnected = false
     @State private var tint: Color = .red
     @State private var chain = UserDefaults.standard.object(forKey: "network") as? String ?? "Signet"
+    
     let chains = ["Mainnet", "Signet", "Testnet", "Regtest"]
     
     
